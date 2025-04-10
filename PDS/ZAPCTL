@@ -1,0 +1,93 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      ZAPCTL                                          |
+ |                                                            |
+ | Function:  The ZAPCTL edit macro is used to build AMASPZAP |
+ |            VER/REP statments from PDS LIST module csect    |
+ |            output.                                         |
+ |                                                            |
+ |            The ==MSG> lines can be converted to data lines |
+ |            with the ISPF Edit MD/MDD line command.         |
+ |                                                            |
+ | Use:       ZAPCTL module csect                             |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            11/26/22 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Address ISREdit
+"isredit macro (parm) NOPROCESS"
+
+parm = translate(parm)
+if parm = 'HELP' |,
+   parm = '?' then
+  do
+    Address ISPExec "display panel(zapctl#)"
+    exit 0
+    end
+
+parse var parm module csect
+
+/* Process line commands, check if C was specified */
+Address ISPExec "control errors return"
+"ISREdit process range C"
+if rc > 0 then
+  do
+    zedsmsg = 'Enter "Cn" line cmd'
+    zedlmsg = 'You must specify the "DATA" lines',
+              'using "Cn" or "CC"'
+    Address ISPExec "setmsg msg(isrz001)"
+    exit 12
+    end
+
+"ISREdit (fr)  = linenum .zfrange"
+"ISREdit (lr)  = linenum .zlrange"
+
+/* Set cursor on first line in range */
+"ISREdit cursor = .zfrange 1"
+
+i = lr
+type = 'REP'
+call do_control
+i = lr
+type = 'VER'
+call do_control
+name = '  NAME ' module csect
+Address ISREDIT
+"line_after "lr" = msgline (name)"
+exit
+
+do_control:
+do while i >= fr
+  "ISREDIT (LINE) = LINE "i
+  if datatype(substr(line,3,6),'X') = 1 then do
+    adr = substr(line,10,5)
+    c1  = substr(line,16,8)
+    c2  = substr(line,25,8)
+    c3  = substr(line,35,8)
+    c4  = substr(line,44,8)
+    lit = substr(line,54,18)
+    zapctl  = '  '||type||'  ' left(adr,6) c1
+    if c2 <> " " then
+      zapctl  = zapctl||","||c2
+    if c3 <> " " then
+      zapctl  = zapctl||","||c3
+    if c4 <> " " then
+      zapctl  = zapctl||","||c4
+    zapctl = left(zapctl,53)||lit
+    Address ISREDIT
+    "line_after "lr" = msgline (zapctl)"
+    end
+    i = i - 1
+  end
+  return
+/*
+PDS86 LIST module csect output:
+
+         addr  c1       c2        c3       c4        lit
+----+----1----+----2----+----3----+----4----+----5----+----6----+----7-
+  000000 0000  A7F4000E C4C5C1E5  40404040 F0F461F0  *x4..DEAV    04/0*
+*/

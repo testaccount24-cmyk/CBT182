@@ -1,0 +1,97 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      LISTFMXI                                        |
+ |                                                            |
+ | Function:  The LISTFMXI exec is used to add datasets       |
+ |            to the LISTC/LISTF table.                       |
+ |                                                            |
+ | Install:   Add APF/LPA/LINK as primary command extensions. |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |            %APF+ Add APF datasets to LISTF                 |
+ |            %LPA+ Add LPA datasets to LISTF                 |
+ |           %LINK+ Add LINK datasets to LISTF                |
+ |                                                            |
+ |              APF,'CMD(%LISTFMXI APF)'                      |
+ |              LPA,'CMD(%LISTFMXI LPA)'                      |
+ |             LINK,'CMD(%LISTFMXI LINK)'                     |
+ |                                                            |
+ | Required:  MXIREXX function                                |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            10/23/22 - Creation                             |
+ |            11/15/22 - Test for PDSE dsorg                  |
+ |            12/26/22 - Calculate USED percentage            |
+ |                       (USED% may be > if CYL allocation)   |
+ |                                                            |
+ * ---------------------------------------------------------- */
+parse arg cmd
+
+Address ISPExec
+"control errors return"
+"vget (pdstname)"
+
+if left(pdstname,3) /= 'PDC' then do
+  zmsg000l =  "LISTC/F table has not been created"
+  "setmsg msg(ispz000)"
+  exit
+  end
+
+"tbbottom" pdstname
+
+line.0 = 0
+line. = ""
+x = MXIREXX('line.',cmd)
+if x <> 0 then exit
+
+do i = 5 to line.0
+  parse var line.i dsn vol .
+  pdscdsn = strip(dsn)
+  pdscvol = strip(vol)
+  pdscdata = cmd
+  parse value '' with pdsccat, pdscvtoc, pdsctot, pdscupd, pdscused,
+                      pdscfree, pdscsec, pdscrf, pdscext, pdsclrec,
+                      pdscblks, pdscdsor, pdsccdat, pdscrdat, pdscused
+  "dsinfo dataset('"dsn"') volume("vol")"
+  if rc = 0 then do
+    pdscrf=left(zdsrf,4)
+    pdscext=right(zdsexta,3)
+    pdsclrec=right(zdslrec,5)
+    pdscblks=right(zdsblk,5)
+    pdscdsor=left(zdsorg,2)
+    if zdsdsnv > 0 then
+      pdscdsor='PE'
+    pdsccdat=zdscdate
+    pdscrdat=zdsrdate
+    if zdsdsnv > 0 then
+      pdscused=strip(zdsperu)||'%'
+    else do
+      used=zdstotu
+      alloc=zdstota
+      x=pos(',',used)
+      do while x > 0
+        used=delstr(used,x,1)
+        x=pos(',',used)
+        end
+      y=pos(',',alloc)
+      do while y > 0
+        alloc=delstr(alloc,y,1)
+        y=pos(',',alloc)
+        end
+      pdscused=(used/alloc)*100
+      pdscused=trunc(pdscused)||'%'
+      end
+    end
+
+  "tbmod" pdstname
+  if rc > 8 then do
+    zmsg000l = "TBOPEN has not been issued for table" pdstname
+    "setmsg msg(ispz000)"
+    exit
+    end
+  end
+
+exit

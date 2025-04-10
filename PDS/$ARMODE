@@ -1,0 +1,12 @@
+                   AMODE and RMODE validation
+
+
+The binder validates the AMODE and RMODE combination according to the
+following table:
+
+                RMODE=24   RMODE=ANY    RMODE=64
+
+AMODE=24        valid      invalid      invalid
+AMODE=31        valid      valid        invalid
+AMODE=ANY       valid      invalid      invalid
+AMODE=64        valid      valid        valid

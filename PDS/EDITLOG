@@ -1,0 +1,88 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      EDITLOG                                         |
+ |                                                            |
+ | Function:  The EDITLOG exec is used to edit the ISPMODE    |
+ |            Log with ISPF.                                  |
+ |                                                            |
+ | Install:   Add EDITLOG as a primary command extension      |
+ |            in PDS.                                         |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |            %EDITLOG+ Edit ISPMODE Log with ISPF Edit       |
+ |              EDITLOG,'CMD(%EDITLOG &OPERAND)'              |
+ |                   EL,'CMD(%EDITLOG &OPERAND)'              |
+ |                                                            |
+ | Use:       EDITLOG                                         |
+ |            EDITLOG LAST <--- position at last >subcommand  |
+ |            EL                                              |
+ |            EL L         <--- position at last >subcommand  |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            08/24/22 - Add LAST parameter                   |
+ |                       Use log. STEM variable               |
+ |            08/06/22 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Arg position
+
+Address ISPEXEC
+"CONTROL ERRORS RETURN"
+"VGET (PDSLOGNM) SHARED"
+
+pdstname = pdslognm
+If Left(pdstname,3) /= 'PDS' Then Do
+  zmsg000l =  "Table is not ISPMODE Log"
+  "SETMSG MSG(ISPZ000)"
+  Exit
+  End
+
+"TBTOP" pdstname
+If rc > 0 Then Do
+  zmsg000l = "TBTOP failed for table" pdstname "RC="rc
+  "SETMSG MSG(ISPZ000)"
+  Exit rc
+  End
+
+Address TSO
+"Newstack"
+
+rows = 0
+Address ISPEXEC
+log. = ''
+Do Forever
+  "TBSKIP" pdstname
+  If rc > 0 Then Leave
+  "TBGET" pdstname
+  If rc > 0 Then Leave
+  rows = rows + 1
+  log.rows = Translate(pdsln1w,'40'x,'00'x)
+  End
+log.0 = rows
+
+zmsg000l =  "Rows = "rows
+"SETMSG MSG(ISPZ000)"
+
+Address TSO
+editdd = 'editdd'random(99)
+"ALLOC F("editdd") UNIT(SYSALLDA) NEW REUSE SPACE(1,30) TRACKS",
+  "LRECL(158) RECFM(F B) BLKSIZE(0) DSORG(PS)",
+  "DA(EDITLOG."pdstname")"
+
+"Execio * DISKW "editdd" (FINIS STEM log."
+"Delstack"
+
+Address ISPEXEC
+"CONTROL ERRORS RETURN"
+if abbrev("LAST",word(position,1),1) = 1 then   /* position at last > */
+  "EDIT DATASET(EDITLOG."pdstname") MACRO(PDSELM)"
+else
+  "EDIT DATASET(EDITLOG."pdstname")"
+"CONTROL ERRORS CANCEL"
+
+Address TSO
+"FREE F("editdd") DELETE"
+Exit

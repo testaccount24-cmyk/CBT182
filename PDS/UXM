@@ -1,0 +1,28 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      UXM                                             |
+ |                                                            |
+ | Function:  The UXM edit macro is used to un-XMIT a member  |
+ |            using the REVIEW command.                       |
+ |                                                            |
+ | Use:       UXM                                             |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            03/03/24 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Address ISRedit
+'macro'
+rev = 'review'    /* Name of REVIEW command */
+rev = 'r510'      /* Test version           */
+'find "\INMR01" .zfirst .zfirst'
+if rc <> 0 then
+  exit
+'(mbr) = member'
+'(dsn) = dataset'
+rdsn = dsn"("mbr")"
+Address ISPexec
+"select cmd("rev" '"rdsn"')"

@@ -1,0 +1,19 @@
+/* TSO TEST script to debug EXCP count in LISTA */
+
+test 'isp.sisplpa(pdf)' cp   /* ISPF Dialog Manager  */
+pdf p.i                      /* Enter PDS in ISPMODE */
+at pds86.ispdspy.ispnullf (%pdsequ2) defer /* SPWRKC equ <- XDSECT2 */
+go
+
+/* <keyboard>lista</keyboard> */
+/* <keyboard>PF11 </keyboard> */
+
+equate nullf  pds86.ispdspy.ispnullf
+equate iocnt1 pds86.ispdspy.iocnt1
+equate dctr21 pds86.ispdspy.dctr21
+equate dctr99 pds86.ispdspy.dctr99
+at nullf  (l nullf  i;l 0r% l(32) xc)
+at iocnt1 (l iocnt1 i;l 0r% l(32) xc)
+at dctr21 (l dctr21 i;l 0r% l(32) xc)
+at dctr99 (l dctr99 i;l 0r% l(32) xc)
+go

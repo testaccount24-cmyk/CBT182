@@ -1,0 +1,56 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PDSMG                                           |
+ |                                                            |
+ | Function:  The PDSMG exec is used to invoke ISPF View      |
+ |            for a member generation on a line command.  The |
+ |            generation number is entered in the DATA field. |
+ |                                                            |
+ |            To invoke ISPF Edit, enter an E after the       |
+ |            generation number in the DATA field.            |
+ |                                                            |
+ |            For example, -1 E                               |
+ |                                                            |
+ | Required:  Add line command to P86LOUX:                    |
+ |            GEN,'CMD(%PDSMG ''&PDSDSN'' &PDSMEM &PDSDATA)'  |
+ |                                                            |
+ | PDS        - DSN=TRIDJK.PDSEGM2,VOL=SER=CBTU01             |
+ | Use:       CMD  NAME     DATA     VER.MOD    CREATED       |
+ |            gen  #MDSECTX -1        01.00  2022/09/15       |
+ |                                                            |
+ | DSLIST     DSLIST - Data Sets Matching TRIDJK.PDSEGM2*     |
+ | Use:       -------------------------------------------     |
+ |            pdsmg / #mdsectx -1  TRIDJK.PDSEGM2             |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |             7/03/24 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+arg dsn mbr gen
+Address ISPExec
+"dsinfo dataset("dsn")"
+if rc <> 0 then do
+  say 'DSINFO rc='rc
+  exit
+  end
+if zdsngen < 1 then do
+  zedlmsg = "Dataset "dsn" does not have member generations defined"
+  Address ISPExec "setmsg msg(isrz000)"
+  exit
+  end
+parse var gen gen type
+if translate(left(type,1)) = 'E' then
+  cmd = 'Edit'
+else
+  cmd = 'View'
+dsn = strip(dsn,,"'")
+Address ISPExec "Control Errors Return"
+Address ISPExec cmd "Dataset('"dsn"("mbr")') Gen("gen")"
+if rc = 10 then do
+  zedlmsg = cmd "of dataset '"dsn"("mbr")' generation "gen" failed"
+  Address ISPExec "setmsg msg(isrz000)"
+  end
+exit

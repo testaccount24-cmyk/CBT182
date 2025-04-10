@@ -1,0 +1,19 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PDSELM                                          |
+ |                                                            |
+ | Function:  ISPF Edit Macro to find the last PDS            |
+ |            subcommand in the ISPLOG                        |
+ |                                                            |
+ | Usage:     Called by EDITLOG exec to support the           |
+ |            EDITLOG LAST positioning argument               |
+ |                                                            |
+ | Author:    Janko                                           |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |             8/24/24 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Address ISREdit
+'Macro'
+"find '>' 1 last"
+exit

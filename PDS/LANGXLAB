@@ -1,0 +1,61 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      LANGXLAB                                        |
+ |                                                            |
+ | Use:       Extract CSECTs and DS 0H labels from ASMLANGX   |
+ |            file and build ASMIDF 'BREAK' statements        |
+ |                                                            |
+ |            langxlab asmlangx_dsn(mbr)                      |
+ |                                                            |
+ | Input:     ASMLANGX file                                   |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            02/18/23 - Created                              |
+ |                                                            |
+ * ---------------------------------------------------------- */
+parse arg dsn
+do While dsn = ""
+  say "Enter dataset name and member name <dsn(mbr)>:"
+  pull dsn
+  if sysdsn(dsn) <> "OK" then do
+    say "Data set "dsn" not allocated"
+    dsn = ""
+    end
+  end
+
+Address TSO
+"ALLOCATE F(LANGXIN) DA("dsn") SHR REUSE"
+"EXECIO * DISKR LANGXIN (STEM langx. FINIS"
+
+do line = 1 to langx.0
+  parse var langx.line 15 stmt
+  stmt = translate(stmt,' ',xrange('00'x,'3F'x)||xrange('fe'x,'ff'x))
+  if pos(' CSECT',substr(stmt,1,16)) > 0 then do
+    if left(stmt,3) = 'PCL' |,
+       left(stmt,3) = 'VRT' |,
+       left(stmt,1) = '*'   then
+      iterate
+    else do
+      parse var stmt label opcode .
+      say '/*' left(label,8) left(opcode,6) '*/'
+      csect = label
+      end
+    end
+  if pos(' DS',stmt) > 0 &,
+     pos(' 0H',stmt) > 0 then do
+    if left(stmt,1) = ' ' |,
+       left(stmt,1) = '*' |,
+       left(stmt,3) = 'IHB' then
+      iterate
+    else do
+      parse var stmt label opcode operand .
+      asm = '/*' left(label,8) left(opcode,5) operand '*/'
+      nnnnn = c2d(substr(langx.line,12,2))
+      say "'BREAK ("csect")stmt#"nnnnn"'"  asm
+      end
+    end
+  end
+
+"FREE F(LANGXIN)"
+exit

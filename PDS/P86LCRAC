@@ -1,0 +1,63 @@
+)ATTR DEFAULT(%+_)
+    % TYPE(TEXT) INTENS(HIGH) COLOR(WHITE) SKIP(ON)
+    $ TYPE(TEXT) INTENS(HIGH) COLOR(YELLOW)
+    ! TYPE(TEXT) INTENS(HIGH) COLOR(BLUE)
+    { TYPE(TEXT) INTENS(HIGH) COLOR(RED)
+    + TYPE(TEXT) INTENS(LOW)  COLOR(TURQ) SKIP(ON)
+    _ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED)
+    ~ TYPE(INPUT) INTENS(HIGH) CAPS(OFF) JUST(LEFT) COLOR(RED)
+    @ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED) PAD(_)
+    # TYPE(INPUT) INTENS(HIGH) CAPS(OFF) COLOR(RED)
+    } type(output) intens(high) caps(off) just(left) pas(on) color(red)
+)BODY EXPAND(\\)
++-\-\-$LISTC RACF List Dataset Profiles+-\-\-
+%OPTION  ===>_ZCMD                                                             +
++
++  LISTDSD Command:
++   }cmd1+  ALL       List dataset profiles  (GENERIC, ALL)
++   }cmd2+  DISCRETE  List dataset profiles  (DISCRETE, ALL)
++   }cmd3+  HISTORY   List dataset profiles  (GENERIC, HISTORY)
++   }cmd4+  STATS     List dataset profiles  (GENERIC, STATISTICS)
++   }cmd5+  AUTHUSER  List dataset profiles  (GENERIC, AUTHUSER)
++
++  SEARCH Command:
++   }cmd6+  MASK      List dataset profiles with%&PREF1  +as a prefix
++
++ Data Set Name:%&PDSCDSN
++        Volume:%&PDSCVOL
+)INIT
+ .HELP = P86PNK@
+  &PREF1=TRUNC(&PDSCDSN,'.')
+ &cmd1 = 'LDA'
+ &cmd2 = 'LDD'
+ &cmd3 = 'LDH'
+ &cmd4 = 'LDS'
+ &cmd5 = 'LDU'
+ &cmd6 = 'SR'
+)PROC
+ VER (&ZCMD,LIST,LDA,LDD,LDH,LDS,LDU,SR)
+ &XX = TRUNC(&ZCMD,'.')
+ &ZTRAIL = .TRAIL
+ &OPERS = .TRAIL
+ IF (&OPERS = ' ') &OPERS = &PDSDATA
+ &XX = '&XX.     '
+ &T=TRUNC(&PDSCVOL,1)
+ &PDSCVLL='VOL(&PDSCVOL.)'
+ IF (&T = '*')  &PDSCVLL=&Z
+ &PDSZSEL=TRANS(TRUNC(&XX,4)
+           LDD,'TRP(LISTDSD ALL DATASET(''&PDSCDSN'') &PDSCVLL'
+           LDA,'TRP(LISTDSD ALL DATASET(''&PDSCDSN'') &PDSCVLL GENERIC'
+           LDH,'TRP(LISTDSD HIS DATASET(''&PDSCDSN'') &PDSCVLL GENERIC'
+           LDS,'TRP(LISTDSD STA DATASET(''&PDSCDSN'') &PDSCVLL GENERIC'
+           LDU,'TRP(LISTDSD AUT DATASET(''&PDSCDSN'') &PDSCVLL GENERIC'
+            SR,'TRP(SEARCH CLASS(DATASET) MASK(&PREF1))'
+            ' ',' '
+              *,'?')
+)PNTS
+FIELD(cmd1)  VAR(ZCMD) VAL('LDA')
+FIELD(cmd2)  VAR(ZCMD) VAL('LDD')
+FIELD(cmd3)  VAR(ZCMD) VAL('LDH')
+FIELD(cmd4)  VAR(ZCMD) VAL('LDS')
+FIELD(cmd5)  VAR(ZCMD) VAL('LDU')
+FIELD(cmd6)  VAR(ZCMD) VAL('SR')
+)END

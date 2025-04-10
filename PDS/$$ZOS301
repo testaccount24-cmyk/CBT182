@@ -1,0 +1,8 @@
+Problem:
+
+In z/OS 3.1, PDSE directory entries were not being processed correctly
+because a FP register was being zeroed out in an IBM SVC or exit.
+
+Solution:
+
+Save/Restore FPR2 across CLOSE SVC call in PDSEDIR routine.

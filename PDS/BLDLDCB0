@@ -1,0 +1,36 @@
+  BLDL  0,BLDLLIST
+
+  BLDL with a zero DCB address indicates that the data set search
+  order begins with the task libraries, then proceeds to the job
+  library or step (whichever is active) followed by the link list
+  libraries.
+
+
+  There are numerous dynamic STEPLIB products that all use their own
+  DDNAME naming convention.  A BLDL with a non-zero DCB can be used
+  to search dynamic tasklibs.
+
+  Product  DDNAME     Vendor
+
+  TSOLIB   SYSnnnnn   IBM
+  STEPLIB  $TEP000n   CBT 452
+  TASKLIB  TLBnnnnn   Broadcom
+  DYNASTEP SYSnnnnn   Tone Software
+  PTSSTEP  STEPLIB    UNICOM Systems
+
+
+  BLDLLIST DS    0F
+
+  FF-LL-NAME1-TTR-K-Z-C-USERDATA  NAME2 (0 or more entries)
+   2  2     8   3 1 1 1     0-62
+                    |
+                    v
+  Z: indicates where the system found the directory entry
+
+  Code  Meaning
+
+  0     Private library
+  1     Link library
+  2     Job, task, or step library
+  3-16  Job, task, or step library of parent task n, where n = Z-2
+

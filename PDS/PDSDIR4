@@ -1,0 +1,250 @@
+  /* --------------------  rexx procedure  -------------------- *
+  | Name:      PDSDIR4                                         |
+  |                                                            |
+  | Function:  The PDSDIR4  exec is used to display a PDS      |
+  |            member list with an optional pattern argument.  |
+  |                                                            |
+  | Syntax:    PDSDIR4  dsname pattern                         |
+  |            PDSDIR4  dsname //SYSIN                         |
+  |                                                            |
+  | Pattern:   If a member name contains a : (colon), it is    |
+  |            assumed to represent one or more members from   |
+  |            the data set whose member names are in that     |
+  |            range of names.                                 |
+  |                                                            |
+  |            If a member name contains a / (slash), it is    |
+  |            assumed to represent one or more members from   |
+  |            the data set which contain the pattern          |
+  |            segments in their member names.                 |
+  |                                                            |
+  |            If a member name contains a * (asterisk), it    |
+  |            is assumed to represent one or more members     |
+  |            from the data set whose member names are in     |
+  |            the range of names represented by the data      |
+  |            before the asterisk and matching the second     |
+  |            name segment somewhere in the remainder of      |
+  |            the member name.                                |
+  |                                                            |
+  | Author:    Janko Kalinic                                   |
+  |            The ISPF Cabal - Vive la revolution             |
+  |            the.pds.command@gmail.com                       |
+  |                                                            |
+  | History:  (most recent on top)                             |
+  |            11/06/24 - Add //SYSIN for member name list     |
+  |            11/04/24 - Use yyyy/mm/dd and hh:mm:ss format   |
+  |                     - Support member selection pattern     |
+  |            10/09/96 - Creation                             |
+  * ---------------------------------------------------------- */
+
+  arg dsn pat
+  do while dsn = ''
+    say 'Enter Dsname:'
+    pull dsn
+  end
+
+  if pat = '' then
+    pat = '*'
+
+  if pat = '//SYSIN' then do
+    pat = ''
+    sysin_dsn = ''
+    do while sysin_dsn = ''
+      say 'Enter SYSIN Dsname:'
+      pull sysin_dsn
+    end
+    "alloc f(sysin) da("sysin_dsn") shr reuse"
+    if rc > 0 then
+      exit
+    "execio * diskr sysin (stem sysin. finis"
+    sysin = ''
+    do x = 1 to sysin.0
+      sysin = sysin || sysin.x
+      end
+    end
+
+  pds = 'PDS'random(9999)
+
+  x = time('r')         /* Initialization for Elapsed Time */
+  mbrs = 0
+
+  Address TSO
+  "alloc f("pds") da("dsn") shr reuse",    /* pds directory */
+    "  recfm(f) dsorg(ps) lrecl(256) blksize(256)"
+
+  'cls'
+  if pos("'",dsn) = 0 then
+    dsn = userid()"."dsn
+  else
+    dsn = strip(dsn,,"'")
+  say 'DSN='dsn
+  say
+  say ' Name                VV MM  Created    Changed             ',
+      '  Size  ID'
+  "execio * diskr" pds "(stem dir. finis"  /* read pds directory */
+  'Free f('pds')'
+
+  hits = 0
+  do blk = 1 to dir.0
+    usedbytes = c2d(substr(dir.blk,1,2))
+    index = 3                            /* skip past used bytes */
+    do while index < usedbytes
+      if substr(dir.blk,index,8) = 'FFFFFFFFFFFFFFFF'x then
+      leave blk
+      match = 0
+      pds2name = substr(dir.blk,index,8) /* member name */
+      Select
+        When WordPos(pds2name,sysin) > 0 Then
+          match = 1
+        When Pos("*",pat) > 0 Then do
+          If Match_wildcard(pds2name,pat) Then
+            match = 1
+          end
+        When Pos("/",pat) > 0 Then do
+          If Match_pattern(pds2name,pat) Then
+            match = 1
+          end
+        When Pos(":",pat) > 0 Then do
+          If Match_range(pds2name,pat) Then
+            match = 1
+          end
+        Otherwise
+          If pds2name = pat Then
+            match = 1
+      End
+      index = index + 11                 /* skip past name and ttr */
+      pds2indc = substr(dir.blk,index,1)
+      len = bitand(pds2indc,'1F'x)       /* isolate user data length */
+      userdata = c2d(len) * 2            /* halfwords to bytes */
+      if (userdata = 30 | userdata = 40) &,    /* ISPF statistics? */
+        bitand(pds2indc,'80'x) /= '80'x then   /* no alias */
+      do
+        vv = c2d(substr(dir.blk,index+1,1))
+        mm = c2d(substr(dir.blk,index+2,1))
+        crcen = substr(dir.blk,index+5,1)
+        crdate = date('O',p2d(substr(dir.blk,index+6,3)),'J')
+        if crcen = '01'x then
+          crdate = '20'||crdate
+        else
+          crdate = '19'||crdate
+        lmcen = substr(dir.blk,index+9,1)
+        lmdate = date('O',p2d(substr(dir.blk,index+10,3)),'J')
+        if lmcen = '01'x then
+          lmdate = '20'||lmdate
+        else
+          lmdate = '19'||lmdate
+        time = p2d(substr(dir.blk,index+13,3))
+        time = substr(time,1,2)||':'||substr(time,3,2)
+        secs = substr(dir.blk,index+4,1)
+        secs = left(p2d(secs||'00'x),2)
+        time = time||':'||secs
+        size = c2d(substr(dir.blk,index+15,2))
+        init = c2d(substr(dir.blk,index+17,2))
+        mod = c2d(substr(dir.blk,index+19,2))
+        id = substr(dir.blk,index+21,8)
+
+        if match = 1 then do
+          hits = hits + 1
+          say pds2name,
+            '           ',
+            right(vv,2,0)||'.'||right(mm,2,0),
+            crdate,
+            lmdate,
+            time,
+            format(size,8),
+            id
+          end
+      end
+      else
+      do
+        if match = 1 then do
+          if bitand(pds2indc,'80'x) = '80'x then
+          say pds2name,
+            '           ',
+            'ALIAS'
+          else do
+            hits = hits + 1
+            say pds2name
+            end
+        end
+      end
+      index = index + userdata + 1       /* skip past user data */
+      mbrs = mbrs +1
+    end
+  end
+  call elapsed_time
+  say
+  say 'pattern = 'pat
+  say 'members = 'mbrs
+  say 'hits    = 'hits
+  say 'elapsed = 'et
+  exit
+
+p2d: procedure
+  parse arg number_p
+  erg = c2x(number_p)
+  sign = right(erg,1)
+  number = left(erg,length(erg)-1)
+  if sign = 'D' then
+  return '-'||number
+  else
+  return number
+
+d2p: procedure
+  arg number
+  if datatype(number) ¬= 'NUM' then
+  return ''
+  if number < 0 then
+  interpret "number_p = '"abs(number)"D'x"
+  else
+  interpret "number_p = '"number"C'x"
+  return number_p
+
+Match_wildcard: Parse Arg mem, pat
+  Parse Var pat pat1 "*" pat2
+  len1 = length(pat1)
+  len2 = length(pat2)
+  If Left(mem,len1) = pat1 &,
+    (Pos(pat2,mem,len1+1) > 0 | len2 = 0) Then Return 1
+  Else Return 0
+
+Match_pattern: Parse Arg mem, pat
+  Parse Var pat pat1 "/" pat2
+  len1 = length(pat1)
+  len2 = length(pat2)
+  If len1 > 0 & len2 = 0 Then
+    If pos(pat1,mem) > 0 Then Return 1
+    Else Return 0
+  If len1 = 0 & len2 > 0 Then
+    If pos(pat2,mem) > 0 Then Return 1
+    Else Return 0
+  If len1 > 0 & len2 > 0 Then
+    If pos(pat1,mem) > 0 & pos(pat2,mem) > 0 Then Return 1
+    Else Return 0
+
+Match_range: Parse Arg mem, pat
+  Parse Var pat pat1 ":" pat2
+  len1 = length(pat1)
+  len2 = length(pat2)
+  If len1 = 0 & len2 = 0 Then
+    Return 1
+  If len1 > 0 & len2 = 0 Then
+    If left(mem,len1) = pat1 Then Return 1
+    Else Return 0
+  If len1 = 0 & len2 > 0 Then
+    If left(mem,len2) < pat2 | left(mem,len2) = pat2 Then Return 1
+    Else Return 0
+  If len1 > 0 & len2 > 0 Then
+    Do
+      If left(mem,len1) = pat1 | left(mem,len2) = pat2 Then Return 1
+      If left(mem,len1) > pat1 & left(mem,len2) < pat2 Then Return 1
+      Else Return 0
+    End
+elapsed_time:
+  ss = time('e')
+  parse value ss with x"."sec
+  sf = bitor(format(trunc(ss//60),2),'F0'x)
+  mm = format(trunc(ss/60),2)
+  mf = bitor(format(trunc(mm//60),2),'F0'x)
+  hh = bitor(format(trunc(mm/60),2),'F0'x)
+  et = hh||":"||mf||":"sf"."left(sec,2)
+  return

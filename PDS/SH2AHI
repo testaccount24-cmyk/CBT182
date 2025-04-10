@@ -1,0 +1,33 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      SH2AHI                                          |
+ |                                                            |
+ | Function:  Edit macro to change SH instructions to         |
+ |            immediate format (AHI  Rx,-nnn)                 |
+ |            if using halfword literals.                     |
+ |                                                            |
+ | Syntax:    SH2AHI                                          |
+ |                                                            |
+ | Test:      https://regexr.com/                             |
+ |                                                            |
+ | Author:    Janko                                           |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            01/06/24 - Created                              |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Address ISREdit
+"Macro"
+"Reset"
+"Exclude All"
+"Find All R'SH    RÝ0-9¨,=H' 10 30"
+"Find All R'SH    RÝ1¨Ý0-5¨,=H' 10 30"
+"Change All '=H' '-' NX 16 30"
+"Change All '''  '' NX 16 30"
+"Change All 'SH ' 'AHI' NX 10 12"
+"(ccnt) = change_counts"
+ccnt = format(ccnt,8)
+"Hide Excluded"
+zedsmsg = ccnt "lines changed"
+zedlmsg = ccnt "lines were changed to immediate format"
+Address ISPExec "setmsg msg(isrz000)"
+exit

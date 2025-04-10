@@ -1,0 +1,27 @@
+)Attr DEFAULT(%+_)
+   %   TYPE(TEXT)  INTENS(HIGH) SKIP(ON)
+   +   TYPE(TEXT)  INTENS(LOW)  SKIP(ON) COLOR(TURQ)
+   !   TYPE(TEXT)  INTENS(LOW)  SKIP(ON) COLOR(RED)
+   ~   TYPE(TEXT)  INTENS(LOW)  SKIP(ON) COLOR(YELLOW)
+   _   TYPE(INPUT) INTENS(HIGH) CAPS(OFF) JUST(LEFT) HILITE(USCORE)
+   #   AREA(SCRL)  EXTEND(ON)
+)Body
++                         ~PDS Subcommand Modification+
++
+%Command ===>_zcmd                                                             +
+
++Modify  ===>_zxcmd
+
+
+                  +<===+
+
+
+ Press%ENTER+to execute,%PF3+to cancel.
+)INIT
+.HELP   = P86CHET0
+VGET (PDSPRE00) PROFILE
+&zxcmd = &pdspre00
+.cursor = zxcmd
+)PROC
+&PDSZSEL = &ZXCMD
+)End

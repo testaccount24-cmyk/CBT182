@@ -1,0 +1,962 @@
+         TITLE 'LMOD: Locate a load module'
+***********************************************************************
+*                                                                     *
+*  LMOD                                                               *
+*                                                                     *
+*  Invoked under TSO,  this  program provides a quick + easy way of   *
+*  finding where a module is being loaded from - ie LPA, Linklist,    *
+*  STEPLIB, or private library.                                       *
+*                                                                     *
+*  EG    LMOD IEFUTL                                                  *
+*        LMOD ALLOCATE                                                *
+*   OR   LMOD AMSP0000 DDNAME(ISPLLIB)                                *   *
+*                                                                     *
+*  ENVIRONMENT                                                        *
+*                                                                     *
+*    State    : Problem                                               *
+*    Key      : 8                                                     *
+*    APF      : No                                                    *
+*    AMODE    : 31                                                    *
+*    RMODE    : 24                                                    *
+*    Location : Linklist or STEPLIB                                   *
+*                                                                     *
+*    Author:    Peter Wright                                          *
+*               Associate Consultant                                  *
+*               Tessella Support Services (UK)                        *
+*               Xephon 1998                                           *
+*                                                                     *
+*    Revised:   Janko Kalinich                                        *
+*               Linux Foundation, Open Mainframe Project              *
+*               CBT 2023                                              *
+***********************************************************************
+*
+         LCLC  &TPUT                                          DRK MAR23
+&TPUT    SETC  'TPUT'                    * USE TPUT                   "
+&TPUT    SETC  'APUT'                    * USE PUTLINE - V(EPUTL)     "
+LMOD     CSECT
+LMOD     AMODE 31
+LMOD     RMODE 24
+*
+R0       EQU   0                         *
+R1       EQU   1                         * @(CPPL) ON ENTRY
+R2       EQU   2                         * WORK REGISTER
+R3       EQU   3                         * WORK REGISTER
+R4       EQU   4                         * WORK REGISTER
+R5       EQU   5                         * WORK REGISTER
+R6       EQU   6                         *
+R7       EQU   7                         *
+R8       EQU   8                         *
+R9       EQU   9                         *
+R10      EQU   10                        * @(PPL)/(@PDE)
+R11      EQU   11                        * @(CPPL)/@(PDL)/@(DCB)/@(CVT)
+R12      EQU   12                        * BASE REGISTER
+R13      EQU   13                        * SAVEAREA/WORKAREA ADDRESS
+R14      EQU   14                        * RETURN ADDRESS
+R15      EQU   15                        * ENTRY ADDRESS
+*
+         USING *,R15                     * ADDRESSABILITY
+         B     START                     * BRANCH TO START OF CODE
+         DC    AL1(LASTL-FIRSTL)         * LENGTH OF HEADER TEXT
+FIRSTL   EQU   *
+         DC    C'LMOD    '
+LASTL    EQU   *
+         DC    C' '
+         DC    CL8'&SYSDATE'
+         DC    C' '
+         DC    CL5'&SYSTIME'
+         DROP  R15                       * FINISHED WITH R15
+         DS    0F                        * ALIGN TO FULL WORD BOUNDARY
+*
+***********************************************************************
+* ADDRESSABILITY AND LINKAGE - RE-ENTRANT FORM
+***********************************************************************
+*
+START    EQU   *
+         STM   R14,R12,12(R13)           * SAVE REGISTERS IN HSA
+         LR    R12,R15                   * LOAD BASE REGISTER
+         USING LMOD,R12                  * AND DEFINE ADDRESSABILITY
+*
+         LR    R11,R1                    * SAVE @(CPPL)
+*
+         LA    R0,LWKAREA                * REQUIRED WORKAREA LENGTH
+         GETMAIN RU,LV=(R0),BNDRY=PAGE,SP=78,LOC=(BELOW,ANY)
+*
+         LR    R2,R1                     * CLEAR ...
+         LA    R3,LWKAREA                * ... WORK ...
+         LR    R4,R2                     *     ... AREA ...
+         SR    R5,R5                     *         ... TO ...
+         MVCL  R2,R4                     *             ... ZEROS
+*
+         ST    R13,4(R1)                 * STORE HSA ADDRESS
+         ST    R1,8(R13)                 * STORE LSA ADDRESS
+         LR    R13,R1                    * R13 = OUR SAVEAREA ADDRESS
+         USING WORKAREA,R13              * WORKAREA ADDRESSABILITY
+*
+         MVI   PRIVLIB,C'N'              * INITIALISE PRIVLIB FLAG
+         LA    R1,4                      * INITIALISE ...
+         ST    R1,RETCODE                * ... RETCODE
+         MVC   DDNAME,STEPLIB            * INITIALISE DDNAME
+         MVC   TRUENM,BLANKS             * INITIALISE TRUENM
+***********************************************************************
+* PARSE THE INPUT
+***********************************************************************
+         USING CPPL,R11                  * CPPL ADDRESSABILITY
+*
+         LA    R10,STPPL                 * PARSE PARAMETER LIST ...
+         USING PPL,R10                   *  ... ADDRESSABILITY
+*
+         L     R1,CPPLUPT                * STORE @(UPT) ...
+         ST    R1,PPLUPT                 * ... IN THE PPL
+*
+         L     R1,CPPLECT                * STORE @(ECT) ...
+         ST    R1,PPLECT                 * ... IN THE PPL
+*
+         LA    R1,CPECB                  * STORE @(ECB) ...
+         ST    R1,PPLECB                 * ... IN THE PPL
+         XC    CPECB,CPECB               * CLEAR THE ECB
+*
+         L     R1,PARSADDR               * STORE @(@(PCL)) ...
+         ST    R1,PPLPCL                 * ... IN THE PPL
+*
+         LA    R1,APDL                   * STORE @(@PDL)) ...
+         ST    R1,PPLANS                 * ... IN THE PPL
+         XC    APDL,APDL                 * ZERO THE DSECT POINTER
+*
+         L     R1,CPPLCBUF               * STORE @(COMMAND BUFFER) ...
+         ST    R1,PPLCBUF                * ... IN THE PPL
+*
+         CALLTSSR EP=IKJPARS,MF=(E,STPPL)
+*
+         LTR   R15,R15                   * PARSE OK ?
+         BNZ   RETURN                    * OH DEAR
+*
+         DROP  R10,R11                   * FINISHED WITH PPL, CPPL
+*
+***********************************************************************
+* PROCESS THE REQUEST
+***********************************************************************
+*
+         L     R11,APDL                  * PARSE DESCRIPTOR LIST ...
+         USING IKJPARMD,R11              * ... ADDRESSABILITY
+*
+         LA    R10,MEMPDE                * @(MEMBER NAME PDE)
+         USING PDE,R10                   * PDE ADDRESSABILITY
+*
+         MVC   NAME,BLANKS               * SET NAME TO BLANKS
+         L     R1,PDEOPADR               * R1 = @(MEMBER NAME)
+         LH    R2,PDEOPLEN               * R2 = L'(MEMBER NAME)
+         ST    R2,LNAME                  * SAVE IT FOR LATER
+         BCTR  R2,R0                     * COPY ...
+         EX    R2,MOVENAME               * ... MEMBER NAME
+*
+         LA    R10,DDNPDE                * @(DDNAME PDE)
+         TM    PDEFLAGS,PDEFPRES         * WAS DDNAME SPECIFIED ?
+         BZ    NODDN                     * JUMP IF NOT
+*
+* A DDNAME WAS SUPPLIED - OPEN IT AND DO A BLDL FOR THE MODULE
+*
+         MVC   DDNAME,BLANKS             * SET DDNAME TO BLANKS
+         L     R1,PDEOPADR               * R1 = @(DDNAME)
+         LH    R2,PDEOPLEN               * R2 = L'DDNAME
+         BCTR  R2,R0                     *  COPY ...
+         EX    R2,MOVEDDN                * ... DDNAME
+*
+         DROP  R10,R11                   * FINISHED WITH PDL, PDE
+*
+         MVC   DCBW(LDCB),DCB            * MOVE DCB TO WORKAREA
+         LA    R11,DCBW                  * R11 = DCB ADDRESS
+         USING IHADCB,R11                * DEFINE DCB ADDRESSABILITY
+*
+         MVC   DCBDDNAM,DDNAME           * MOVE DDNAME INTO DCB
+*
+         MVC   OPENW(LOPENL),OPENL                * OPEN ...
+         OPEN  ((R11),INPUT),MODE=31,MF=(E,OPENW) * ... DDNAME
+*
+         TM    DCBOFLGS,DCBBIT3          * BIT 3 SHOULD BE 1
+         BZ    OPENERR                   * ITS NOT SO AN ERROR OCCURRED
+*
+DOBLDL   EQU   *
+         MVC   BLDLLIST(4),BLDLHEAD      * MOVE IN #ENTRIES/L'ENTRY
+         MVC   BLNAME,NAME               * MOVE NAME INTO BLDL LIST
+*
+         LA    R3,BLDL24A                * @(24-BIT CODE)
+         LA    R4,BLDL31A                * @(31-BIT RESUMPTION)
+         BSM   R4,R3                     * SWITCH TO AMODE 24
+*
+BLDL24A  EQU   *
+         BLDL  (R11),BLDLLIST            * LOOK IN DDNAME FOR MODULE
+*
+         BSM   0,R4                      * SWITCH BACK TO AMODE 31
+*
+BLDL31A  EQU   *
+         LR    R2,R15                    * SAVE BLDL RETURN CODE
+*
+         MVC   CLOSEW(LCLOSEL),CLOSEL            * CLOSE ...
+         CLOSE ((R11)),MODE=31,MF=(E,CLOSEW)     * ... DDNAME
+*
+         LTR   R2,R2                     * DID WE FIND THE MODULE ?
+         BNZ   BLDLERR                   * NO, SO QUIT
+         MVI   PRIVLIB,C'Y'              * YES, SET PRIVLIB FLAG
+*
+         DROP  R11                       * FINISHED WITH DCB
+*
+NODDN    EQU   *
+         L     R11,CVTPTR(,R0)           * CVT ...
+         USING CVTMAP,R11                * ... ADDRESSABILITY
+*
+         CLI   PRIVLIB,C'Y'              * JUMP IF MODULE ...
+         BE    LSPMOD                    * ... IN PRIVATE LIBRARY
+* 1) LOOK IN THE ACTIVE LPA QUEUE FOR THE MODULE
+* SCAN THE ACTIVE LPA QUEUE FOR THE MODULE
+*
+         L     R10,CVTQLPAQ              * @(ACTIVE LPA QUEUE)
+         L     R10,0(R10)                * @(FIRST ALPAQ CDE)
+         USING CDENTRY,R10               * CDE ADDRESSABILITY
+LPAQLOOP EQU   *
+         LTR   R10,R10                   * JUMP OUT OF LOOP ...
+         BZ    LPADIR                    * ... AT END OF QUEUE
+*
+         CLC   NAME,CDNAME               * DO NAMES MATCH ?
+         BE    LPAQCDE                   * OH, GOODY !
+         L     R10,CDCHAIN               * LOOP BACK ...
+         B     LPAQLOOP                  * ... FOR NEXT ALPAQ CDE
+*
+* CDE FOUND. IF A MINOR CDE (ALIAS) GET THE MAJOR CDE
+*
+LPAQCDE  EQU   *
+         XC    RETCODE,RETCODE           * INDICATE MODULE FOUND
+         TM    CDATTR,CDMIN              * JUMP IF CDE ...
+         BNO   LPAQBMSG                  * ... IS A MAJOR CDE
+*
+         L     R10,CDXLMJP               * OTHERWISE GET @(MAJOR CDE)
+         MVC   TRUENM,CDNAME             * SAVE MAJOR NAME
+*
+* BUILD AND ISSUE THE MESSAGE
+*
+LPAQBMSG EQU   *
+         L     R9,CDXLMJP                * EXTENT LIST ...
+         USING XTLST,R9                  * ... ADDRESSABILITY
+*
+         MVC   MSG(LMSG1A),MSG1          * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG1NAME(8),NAME      * MOVE IN MODULE NAME
+         MVC   MSG+MSG1MLOC(19),LPAQ     * MOVE IN 'ON ALPA QUEUE'
+         MVO   TMP8+4(4),XTLMSBLN        * COPY LENGTH AS PACKED
+         UNPK  MSG+MSG1LEN(6),TMP8+4(4)  * UNPACK MODULE LENGTH
+         NC    MSG+MSG1LEN(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG1LEN(6),HEXTAB     * CONVERT TO EBCDIC
+         MVO   TMP8+3(5),XTLMSBAD        * COPY ADDRESS AS PACKED
+         UNPK  MSG+MSG1ADDR(8),TMP8+3(5) * UNPACK MODULE ADDRESS
+         NC    MSG+MSG1ADDR(8),ZONEMASK  * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG1ADDR(8),HEXTAB    * CONVERT TO EBCDIC
+*
+         CLI   TRUENM,C' '               * IS THIS AN ALIAS ?
+         BNE   LPAQM1A                   * JUMP IF YES
+*
+         &TPUT MSG,LMSG1                 * MESSAGE W/O TRUE NAME
+         B     LPAQMSG2                  * JUMP
+*
+LPAQM1A  EQU   *
+         MVC   MSG+MSG1TNAM(8),TRUENM    * MOVE IN TRUE NAME
+         &TPUT MSG,LMSG1A                * MESSAGE WITH TRUE NAME
+*
+LPAQMSG2 EQU   *
+         MVC   MSG(LMSG2),MSG2           * MOVE IN MESSAGE SKELETON
+         MVO   TMP8+3(5),CDENTPT         * COPY EPA AS PACKED
+         UNPK  MSG+MSG2EPA(8),TMP8+3(5)  * UNPACK EPA
+         NC    MSG+MSG2EPA(8),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG2EPA(8),HEXTAB     * CONVERT TO EBCDIC
+         SPACE 1                                              DRK MAR23
+         TM    CDENTPT,CDEMODE           * AMODE 31 ?
+         BO    LPAQTPUT                  * YES, LEAVE MSG AS IS       "
+         TM    CDENTPT3,CDEMOD64         * AMODE 64 ?         DRK MAR23
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG2AMOD(2),=C'64'    * YES, CHANGE TO AMODE 64    "
+         B     LPAQTPUT                                       DRK MAR23
+         TM    CDATTR2,CDEANYM           * AMODE ANY ?        DRK MAR23
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG2AMOD(3),=C'ANY'   * YES, CHANGE TO AMODE ANY   "
+         B     LPAQTPUT                                       DRK MAR23
+         MVC   MSG+MSG2AMOD(2),AMODE24   * NO, CHANGE TO AMODE 24
+LPAQTPUT DS    0H                                             DRK MAR23
+         &TPUT MSG,LMSG2                 * ISSUE MESSAGE
+*
+         DROP  R9,R10                    * FINISHED WITH CDE, XTLST
+* 2) LOOK IN THE LPA DIRECTORY FOR THE MODULE
+*
+* CALL THE LPA DIRECTORY SCAN ROUTINE (IEAVVMSR). THIS REQUIRES THE
+* MODULE NAME IN R0/R1, @(CVT) IN R3, AND CHANGES R6, R8, AND R9.
+*
+LPADIR   EQU   *
+         MVC   TRUENM,BLANKS             * CLEAR TRUE NAME
+         LM    R0,R1,NAME                * R0/R1 = MODULE NAME
+         LR    R3,R11                    * R3    = @(CVT)
+*
+LPADSCAN EQU   *
+         L     R15,CVTLPDSR              * @(LPA SEARCH ROUTINE)
+         BASR  R14,R15                   * CALL IEAVVMSR
+         B     LPADLPDE                  * NORMAL RETURN : FOUND IT
+         B     SVCTAB                    * ERROR RETURN  : NOT IN LPA
+*
+* LPDE FOUND. IF A MINOR LPDE (ALIAS) TRY AGAIN FOR THE MAJOR LPDE
+*
+LPADLPDE EQU   *
+         LR    R10,R0                    * LPDE ...
+         USING LPDE,R10                  * ... ADDRESSABILITY
+*
+         TM    LPDEATTR,LPDEMIN          * IS THIS A MINOR LPDE ?
+         BNO   LPADBMSG                  * NO, ITS A MAJOR
+         MVC   TRUENM,LPDEMJNM           * SAVE THE MAJOR NAME
+         LM    R0,R1,LPDEMJNM            * AND GO AND ...
+         B     LPADSCAN                  * ... GET ITS CDE
+*
+* BUILD AND ISSUE THE MESSAGE
+*
+LPADBMSG EQU   *
+         XC    RETCODE,RETCODE           * INDICATE MODULE FOUND
+*
+         MVC   MSG(LMSG1A),MSG1          * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG1NAME(8),NAME      * MOVE IN MODULE NAME
+         MVC   MSG+MSG1MLOC(16),LPAD     * MOVE IN 'IN ALPA DIRECTORY'
+         MVO   TMP8+4(4),LPDEXTLN+1(3)   * COPY LENGTH AS PACKED
+         UNPK  MSG+MSG1LEN(6),TMP8+4(4)  * UNPACK MODULE LENGTH
+         NC    MSG+MSG1LEN(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG1LEN(6),HEXTAB     * CONVERT TO EBCDIC
+         MVO   TMP8+3(5),LPDEXTAD        * COPY ADDRESS AS PACKED
+         UNPK  MSG+MSG1ADDR(8),TMP8+3(5) * UNPACK MODULE ADDRESS
+         NC    MSG+MSG1ADDR(8),ZONEMASK  * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG1ADDR(8),HEXTAB    * CONVERT TO EBCDIC
+*
+         CLI   TRUENM,C' '               * SPECIFIED MEMBER AN ALIAS ?
+         BNE   LPADM1A                   * YES - USE FULL MESSAGE
+*
+         &TPUT MSG,LMSG1                 * MESSAGE W/O TRUE NAME
+         B     LPADMSG2                  * JUMP
+*
+LPADM1A  EQU   *
+         MVC   MSG+MSG1TNAM(8),TRUENM    * MOVE IN TRUE NAME
+         &TPUT MSG,LMSG1A                * MESSAGE WITH TRUE NAME
+*
+LPADMSG2 EQU   *
+         MVC   MSG(LMSG2),MSG2           * MOVE IN MESSAGE SKELETON
+         MVO   TMP8+3(5),LPDENTP         * COPY EPA AS PACKED
+         UNPK  MSG+MSG2EPA(8),TMP8+3(5)  * UNPACK EPA
+         NC    MSG+MSG2EPA(8),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG2EPA(8),HEXTAB     * CONVERT TO EBCDIC
+         SPACE 1                                              DRK MAR23
+         TM    LPDENTP,LPDEMODE          * AMODE 31 ?
+         BO    LPADTPUT                  * YES, LEAVE MSG AS IS       "
+         TM    LPDEEPB3,LPDEAM64         * AMODE 64 ?         DRK MAR23
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG2AMOD(2),=C'64'    * YES, CHANGE TO AMODE 64    "
+         B     LPADTPUT                                       DRK MAR23
+         TM    LPDEATT2,LPDEANYM         * AMODE ANY ?        DRK MAR23
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG2AMOD(3),=C'ANY'   * YES, CHANGE TO AMODE ANY   "
+         B     LPADTPUT                                       DRK MAR23
+         MVC   MSG+MSG2AMOD(2),AMODE24   * NO, CHANGE TO AMODE 24
+LPADTPUT DS    0H                                             DRK MAR23
+         &TPUT MSG,LMSG2                 * ISSUE MESSAGE
+*
+         DROP  R10                       * FINISHED WITH LPDE
+* 3) LOOK IN SVC TABLE IF THIS LOOKS LIKE AN SVC
+* IF THE MODULE NAME STARTS 'IGC' IT COULD BE AN SVC ...
+*
+SVCTAB   EQU   *
+         CLC   NAME(3),IGC00             * COULD IT BE AN SVC?
+         BNE   LNKSTPLB                  * NO, JUMP
+*
+* NUCLEUS SVCS ARE IGCNNN, LPA SVCS ARE IGC00NNN ...
+*
+         L     R2,LNAME                  * R2 = L'(MEMBER NAME)
+         CH    R2,H6                     * 6 CHARACTERS EXACTLY ?
+         BNE   SVCLPA                    * IF NOT, CANNOT BE IN NUCLEUS
+         MVI   NUCSVC,X'FF'              * OTHERWISE FLAG AS NUCLEUS
+         LA    R10,NAME+3                * POINT TO SVC NAME SUFFIX
+         B     SVCCHECK                  * AND GO FOR THE SVC TABLE
+*
+* NAME > 6 CHARS : IF IT IS AN SVC IT MUST BE AN LPA SVC
+*
+SVCLPA   EQU   *
+         LA    R10,NAME+5                * @(SUFFIX OF SUPPLIED NAME)
+         CLC   NAME(5),IGC00             * STILL THINK ITS AN SVC ?
+         BE    SVCCHECK                  * YES ...
+         LA    R10,TRUENM+5              * @(SUFFIX OF TRUE NAME)
+         CLC   TRUENM(5),IGC00           * STILL THINK ITS AN SVC ?
+         BNE   LNKSTPLB                  * NO, SO GO FOR LINKLIST ETC
+*
+* CHECK SVC 'SUFFIX' IS VALID - MUST BETWEEN 0 AND 255 PACKED DECIMAL
+*
+SVCCHECK EQU   *
+         CLI   0(R10),C'0'               * X MUST BE ...
+         BL    LNKSTPLB                  * ... BETWEEN ...
+         CLI   0(R10),C'2'               *     ... '0' AND '2'
+         BH    LNKSTPLB                  *         ... FOR AN SVC
+         CLI   1(R10),C'0'               * Y MUST BE ...
+         BL    LNKSTPLB                  * ... BETWEEN ...
+         CLI   1(R10),C'9'               *      ... '0' AND '9'
+         BH    LNKSTPLB                  *         ... FOR AN SVC
+*
+         CLI   NUCSVC,X'FF'              * IS IT A NUCLEUS SVC?
+         BE    SVCNUCHK                  * YES - GO CHECK LAST BYTE
+*
+         CLI   2(R10),C'0'               * Z MUST BE '0' ...
+         BE    SVCOK                     * ... OR ...
+         CLI   2(R10),C'{'               *      ... BETWEEN ...
+         BL    LNKSTPLB                  *         ... '{' AND ...
+         CLI   2(R10),C'I'               *              ... 'I' IF ...
+         BH    LNKSTPLB                  *                 ... LPA SVC
+         B     SVCOK                     * IT IS AN SVC
+*
+SVCNUCHK EQU   *
+         CLI   2(R10),C'0'               * Z MUST BE ...
+         BL    LNKSTPLB                  * ... BETWEEN ...
+         CLI   2(R10),C'9'               *      ... '0' AND '9' ...
+         BH    LNKSTPLB                  *         ... FOR NUCLEUS SVC
+*
+* SVC SUFFIX IS VALID - LOCATE AND LIST CONTENTS OF ITS SVC TABLE ENTRY
+*
+SVCOK    EQU   *
+         PACK  TMP8,0(3,R10)             * PACK THE SUFFIX
+         CVB   R2,TMP8                   * CONVERT TO BINARY
+         CH    R2,H255                   * IF > 255 MODULE ...
+         BH    LNKSTPLB                  * ... CAN'T BE AN SVC
+*
+         L     R10,CVTABEND              *  SCVT ...
+         USING SCVTSECT,R10              * ... ADDRESSABILITY
+*
+         LR    R1,R2                     * OFFSET INTO SVC TABLE ...
+         SLL   R1,3                      * ... = (SVC NUMBER) * 8
+         L     R10,SCVTSVCT              * GET @(SVC TABLE)
+         AR    R10,R1                    * SVC TABLE ENTRY ...
+         USING SVCENTRY,R10              * ... ADDRESSABILITY
+*
+         MVC   MSG(LMSG3),MSG3           * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG3NAME(8),NAME      * MOVE IN MODULE NAME
+         CVD   R2,TMP8                   * ... TO DECIMAL
+         ED    MSG+MSG3SVCN(4),TMP8+6    * AND EDIT INTO MESSAGE
+         TM    SVCATTR1,SVCTP34          * IS IT A TYPE 3 (OR 4)
+         BNO   NOTTYP34                  * NOPE
+         MVI   MSG+MSG3TYPE,C'3'         * MOVE IN TYPE '3' (OR 4)
+         B     TYPEDONE                  * AND JUMP
+NOTTYP34 EQU   *
+         TM    SVCATTR1,SVCTP2           * IS IT A TYPE 2 ?
+         BNO   NOTTYP2                   * NOPE
+         MVI   MSG+MSG3TYPE,C'2'         * MOVE IN TYPE '2'
+         B     TYPEDONE                  * AND JUMP
+NOTTYP2  EQU   *
+         TM    SVCATTR1,SVCTP6           * IS IT A TYPE 6
+         BNO   TYPEDONE                  * IF NOT, MUST BE TYPE 1
+         MVI   MSG+MSG3TYPE,C'6'         * MOVE IN TYPE '6'
+TYPEDONE EQU   *
+         MVO   TMP8+3(5),SVCEP           * COPY EP ADDR AS PACKED
+         UNPK  MSG+MSG3ADDR(8),TMP8+3(5) * UNPACK EP ADDRESS
+         NC    MSG+MSG3ADDR(8),ZONEMASK  * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG3ADDR(8),HEXTAB    * CONVERT TO EBCDIC
+         &TPUT MSG,LMSG3                 * ISSUE MESSAGE
+*
+         CLI   TRUENM,C' '               * SPECIFIED MEMBER AN ALIAS ?
+         BE    LNKSTPLB                  * NO THATS IT HERE
+*
+         MVC   MSG(LMSG6),MSG6           * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG6NAME(8),NAME      * MOVE IN MODULE NAME
+         MVC   MSG+MSG6TRNM(8),TRUENM    * MOVE IN TRUE NAME
+         &TPUT MSG,LMSG6                 * ISSUE MESSAGE
+*
+         DROP  R10                       * FINISHED WITH SVC TABLE
+* 4) LOOK IN LINKLIST/STEPLIB
+* DO A LINKLIST/STEPLIB BLDL (NO DCB)
+*
+LNKSTPLB EQU   *
+         MVC   BLDLLIST(4),BLDLHEAD      * MOVE IN #ENTRIES/L'ENTRY
+         MVC   BLNAME,NAME               * MOVE NAME INTO BLDL LIST
+         LA    R3,BLDL24B                * @(24-BIT CODE)
+         LA    R4,BLDL31B                * @(31-BIT RESUMPTION)
+         BSM   R4,R3                     * SWITCH TO AMODE 24
+*
+BLDL24B  EQU   *
+         BLDL  0,BLDLLIST                * LOOK IN LINKLIST / STEPLIB
+*
+         BSM   0,R4                      * SWITCH BACK TO AMODE 31
+*
+BLDL31B  EQU   *
+         LTR   R15,R15                   * FOUND ANYTHING ?
+         BNZ   EXIT                      * JUMP IF NOT
+*
+* MODULE FOUND IN LINKLIST/STEPLIB, OR SPECIFIED PRIVATE LIBRARY
+*
+LSPMOD   EQU   *
+         XC    RETCODE,RETCODE           * INDICATE MODULE FOUND
+         MVC   MSG(LMSG4T),MSG4          * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG4NAME(8),NAME      * MOVE IN MODULE NAME
+         TM    BLC,BLCALIAS              * IS THIS AN ALIAS?
+         BNO   LSPTYPOK                  * NO, SO JUMP
+         MVC   MSG+MSG4MTYP(5),MINOR     * YES, SO FLAG IT
+*
+LSPTYPOK EQU   *
+         CLI   BLZ,BLZPRIV               * MODULE IN PRIVATE LIBRARY ?
+         BE    LSPLIBOK                  * YES, ALL SET
+         MVC   MSG+MSG4LTYP(16),JSLIB    * NO, ASSUME JOB/STEP/TASK LIB
+         CLI   BLZ,BLZLINK               * MODULE IN LINKLIST LIBRARY ?
+         BH    LSPLIBOK                  * NO, ASSUMPTION WAS CORRECT
+*
+         CLI   BLK,X'00'                 * IN SYS1.LINKLIB ITSELF ?
+         BNE   LSPLIBOK                  * NOT IF CONCAT # > 0
+         MVC   MSG+MSG4LTYP(21),LINKLIB  * YES, SO FLAG IT
+         B     LSPMSG                    * ALL DONE
+*
+LSPLIBOK EQU   *
+         SR    R8,R8                     * GET ...
+         IC    R8,BLK                    * ... CONCATENATION NUMBER
+         LA    R1,1(R8)                  * ADD 1 (FIRST D/S IS CCAT 0)
+         CVD   R1,TMP8                   * CONVERT TO DECIMAL
+         MVC   TMP8(4),I3PAT             * CONVERT CONCAT # ...
+         ED    TMP8(4),TMP8+6            * ... TO EBCDIC ...
+         MVC   MSG+MSG4CCAT(2),TMP8+2    *      ... AND MOVE INTO MSG
+*
+         CLI   BLZ,BLZLINK               * IS IT IN LINKLIST?
+         BNE   LSPSTPLB                  * NO, MUST BE IN STEP/PRIV LIB
+*
+* MODULE IN LINKLIST - SCAN LINKLIST TABLE FOR ACTUAL DATASET
+*
+         MVC   MSG+MSG4LTYP(16),LLIB     * MOVE IN 'LINKLIST'
+         L     R10,CVTLLTA               * @(LINKLIST TABLE)
+         LA    R10,8(R10)                * SCROLL PAST HEADER
+LSPLLTLP EQU   *
+         LA    R10,45(R10)               * MOVE DOWN TABLE ...
+         BCT   R8,LSPLLTLP               * ... TO THE ENTRY WE WANT
+*
+         MVC   MSG+MSG4DSNM(44),1(R10)   * MOVE IN LINKLIST D/S NAME
+*
+         MVC   CAMLSTW(LCAMLST),CAMLST   * SKELETON CAMLST TO WORKAREA
+         LA    R1,MSG+MSG4DSNM           * STORE @(DSN) ...
+         ST    R1,CAMLSTW+4              * ... IN CAMLST PARMLIST
+         LA    R1,CAMDATA                * STORE @(CAMLST WORKAREA) ...
+         ST    R1,CAMLSTW+12             * ... IN CAMLST PARMLIST
+*
+         LOCATE CAMLSTW                  * EXECUTE LOCATE MACRO
+*
+         LA    R1,MSG+MSG4DSNM+43        * @(LAST CHAR OF DATASET NAME
+         LA    R2,44                     * #(CHARS IN DATASET NAME)
+LSPDSLP1 EQU   *
+         CLI   0(R1),C' '                *  FOUND END OF DATASET NAME ?
+         BNE   LSPDSND1                  * YES, SO JUMP OUT OF LOOP
+         BCTR  R1,0                      *  NO, SO MOVE BACK ...
+         BCT   R2,LSPDSLP1               * ... AND LOOK AGAIN
+         LA    R1,1(R1)                  * DSN ALL BLANKS
+LSPDSND1 EQU   *
+         MVC   2(2,R1),ON                * MOVE IN 'ON'
+         MVC   5(6,R1),VSERIAL           * MOVE IN DATASET VOLSER
+         B     LSPMSG                    * JUMP
+*
+* MODULE IN STEPLIB OR PRIVATE LIBRARY- SCAN TIOT FOR DDNAME
+*
+LSPSTPLB EQU   *
+         L     R10,CVTTCBP               * CVTTCP ...
+         L     R10,4(R10)                * ... -> ACTIVE TCB ...
+         L     R9,TCBTIO-TCB(R10)        *      ... -> TIOT
+         LA    R9,24(R9)                 * POINT AT FIRST DD ENTRY
+LSPTIOLP EQU   *
+         CLI   0(R9),X'00'               * JUMP OUT ...
+         BE    LSPMSG                    * ... IF HIT THE END
+         CLC   4(8,R9),DDNAME            * IS THIS THE ENTRY ?
+         BE    LSPGOTDD                  * YES ...
+         SR    R1,R1                     * GET LENGTH ...
+         IC    R1,0(R9)                  * ... OF TIOT ENTRY
+         AR    R9,R1                     * LOOP BACK ...
+         B     LSPTIOLP                  * ... FOR NEXT ENTRY
+*
+LSPGOTDD EQU   *
+         CLI   BLK,X'00'                 * FIRST STEPLIB ?
+         BE    LSPGOTDS                  * YES - GOT IT IN ONE
+LSPDSNLP EQU   *
+         SR    R1,R1                     * GET LENGTH ...
+         IC    R1,0(R9)                  * ... OF TIOT ENTRY
+         AR    R9,R1                     * ADVANCE TO NEXT ENTRY
+         CLI   0(R9),X'00'               * HIT THE END ?
+         BE    LSPMSG                    * YES, SO QUIT
+         CLC   4(8,R9),BLANKS            * PART OF SAME CONCATENATION ?
+         BNE   LSPMSG                    * NO, SO QUIT
+         BCT   R8,LSPDSNLP               * OTHERWISE KEEP LOOPING
+*
+LSPGOTDS EQU   *
+*        SR    R8,R8                     * GET ...            DRK APR23
+*        ICM   R8,B'0111',12(R9)         *  ... JFCB ...      DRK APR23
+*        LA    R8,16(R8)                 *     ... ADDRESS    DRK APR23
+         SPACE 1
+         DROP  R11                                            DRK APR23
+         USING TIOENTRY,R9                                    DRK APR23
+         LA    R6,EPA                    * POINT TO EPA       DRK APR23
+         ST    R6,SWEPAPTR               * INITIALIZE EPA PTR DRK APR23
+         USING ZB505,R6                  *                    DRK APR23
+         XC    SWAEPAX,SWAEPAX           * INITIALIZE THE EPA DRK APR23
+         MVC   SWVA,TIOEJFCB             * SVA OF JFCB INTO EPA       "
+         SWAREQ FCODE=RL,                * LOCATE             DRK APR23X
+               EPA=SWEPAPTR,             *  JFCB              DRK APR23X
+               MF=(E,PARMLIST),          *   IN               DRK APR23X
+               UNAUTH=YES                *    SWA             DRK APR23
+         L     R8,SWBLKPTR               * SET PTR TO THE JFCB        "
+         SPACE 1
+         USING INFMJFCB,R8               * JFCB ADDRESSABILITY
+         MVC   MSG+MSG4DSNM(44),JFCBDSNM * MOVE IN DATASET NAME
+         LA    R1,MSG+MSG4DSNM+43        * @(LAST CHAR OF DATASET NAME
+         LA    R2,44                     * #(CHARS IN DATASET NAME)
+LSPDSLP2 EQU   *
+         CLI   0(R1),C' '                * FOUND END OF DATASET NAME ?
+         BNE   LSPDSND2                  * YES, SO JUMP OUT OF LOOP
+         BCTR  R1,0                      * NO, SO MOVE BACK ...
+         BCT   R2,LSPDSLP2               * ... AND LOOK AGAIN
+         LA    R1,1(R1)                  * DSN ALL BLANKS
+LSPDSND2 EQU   *
+         MVC   2(2,R1),ON                * MOVE IN 'ON'
+         MVC   5(6,R1),JFCBVOLS          * MOVE IN DATASET VOLSER
+         DROP  R6,R8,R9                  * FINISHED WITH EPA/JFCB/TIOT
+*
+* AT LAST - ISSUE MESSAGES
+*
+LSPMSG   EQU   *
+         MVO   TMP8+4(4),BLTTR           * COPY TTR AS PACKED
+         UNPK  MSG+MSG4TTR(6),TMP8+4(4)  * UNPACK TTR
+         NC    MSG+MSG4TTR(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG4TTR(6),HEXTAB     * CONVERT TO EBCDIC
+         &TPUT MSG,LMSG4                 * ISSUE MESSAGE
+*
+         CLI   MSG+MSG4DSNM,C' '         * DSN PRESENT ?
+         BE    LSPMSG5                   * NO, SO SKIP SECOND LINE
+         &TPUT MSG+LMSG4,LMSG4A          * ISSUE MESSAGE
+*
+LSPMSG5  EQU   *
+         MVC   MSG(LMSG5),MSG5           * MOVE IN MESSAGE SKELETON
+         MVO   TMP8+4(4),BLMODLN         * COPY LENGTH AS PACKED
+         UNPK  MSG+MSG5LEN(6),TMP8+4(4)  * UNPACK LENGTH
+         NC    MSG+MSG5LEN(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG5LEN(6),HEXTAB     * CONVERT TO EBCDIC
+         MVO   TMP8+4(4),BLEPADDR        * COPY EPA AS PACKED
+         UNPK  MSG+MSG5EPA(6),TMP8+4(4)  * UNPACK EPA
+         NC    MSG+MSG5EPA(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG5EPA(6),HEXTAB     * CONVERT TO EBCDIC
+         SPACE 1                                              DRK MAR23
+         TM    BLARMODE,BLAMANY          * AMODE ANY ?
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG5AMOD(3),=C'ANY'   * YES, CHANGE TO AMODE ANY   "
+         B     LSPMRMOD                                               "
+         TM    BLARMODE,BLAM31           * AMODE 31 ?
+         BO    LSPMRMOD                  * YES, LEAVE MSG AS IS       "
+         TM    BLARMODE,BLAM64           * AMODE 64 ?         DRK MAR23
+         BNO   *+4+6+4                   * NO                         "
+         MVC   MSG+MSG5AMOD(2),=C'64'    * YES, CHANGE TO AMODE 64    "
+         B     LSPMRMOD                                               "
+         MVC   MSG+MSG5AMOD(2),AMODE24   * NO, CHANGE TO AMODE 24
+LSPMRMOD DS    0H                                             DRK MAR23
+         TM    BLARMODE,BLRMANY          * RMODE ANY ?
+         BO    *+10                      * YES, LEAVE MSG AS IS
+         MVC   MSG+MSG5RMOD(3),RMODE24   * NO, CHANGE TO RMODE 24
+         &TPUT MSG,LMSG5                 * ISSUE MESSAGE
+*
+         TM    BLC,BLCALIAS              * IS THIS AN ALIAS?
+         BZ    EXIT                      * NO, SO QUIT
+         TM    BLC,X'0F'                 * 15 HALFWORDS
+         BO    EXIT                      * YES - SKIP ALIAS MESSAGE
+*
+         MVC   MSG(LMSG6A),MSG6          * MOVE IN MESSAGE SKELETON
+         MVC   MSG+MSG6NAME(8),NAME      * MOVE IN MODULE NAME
+         MVC   MSG+MSG6TRNM(8),BLMEMNAM  * MOVE IN TRUE NAME
+         MVO   TMP8+4(4),BLMEMEPA        * COPY EPA AS PACKED
+         UNPK  MSG+MSG6EPA(6),TMP8+4(4)  * UNPACK TRUE NAME EPA
+         NC    MSG+MSG6EPA(6),ZONEMASK   * CONVERT ZONES TO ZEROS
+         TR    MSG+MSG6EPA(6),HEXTAB     * CONVERT TO EBCDIC
+         &TPUT MSG,LMSG6A                * ISSUE MESSAGE
+***********************************************************************
+* ALL DONE ...
+***********************************************************************
+EXIT     EQU   *
+         OC    RETCODE,RETCODE           * DID WE FIND ANYTHING?
+         BZ    RETURN                    * YEP.... ALL DONE
+*
+         MVC   MSG(LMSG0),MSG0           * MOVE MESSAGE BELOW LINE
+         MVC   MSG+MSG0NAME(8),NAME      * MOVE IN MODULE NAME ...
+         &TPUT MSG,LMSG0                 * ... AND INFORM USER
+*
+RETURN   EQU   *
+         IKJRLSA APDL                    * GET RID OF THE PDL
+*
+         LR    R1,R13                    * R1  = OUR SAVEAREA ADDRESS
+         L     R13,4(R13)                * R13 = HSA ADDRESS
+         LA    R0,LWKAREA                *  WORKAREA LENGTH
+         FREEMAIN RU,LV=(R0),A=(R1),SP=78
+*
+         L     R14,12(R13)               * RESTORE R14
+         SR    R15,R15                   * NEVER PREVENT LOGON
+         LM    R0,R12,20(R13)            * RESTORE R0-R12
+         BR    R14                       * AND RETURN
+*
+***********************************************************************
+* ERROR CONDITIONS
+***********************************************************************
+*
+OPENERR  EQU   *
+         MVC   MSG(OPENMSGL),OPENMSG     * MOVE MESSAGE BELOW LINE
+         MVC   MSG+MSGODDNM(8),DDNAME    * MOVE IN DDNAME
+         &TPUT MSG,OPENMSGL              * TELL USER OPEN FAILED
+         B     RETURN
+*
+BLDLERR  EQU   *
+         MVC   MSG(BLDLMSGL),BLDLMSG     * MOVE MESSAGE BELOW LINE
+         MVC   MSG+MSGBNAME(8),BLNAME    * MOVE IN NAME
+         &TPUT MSG,BLDLMSGL              * TELL USER BLDL FAILED
+         B     RETURN
+***********************************************************************
+* CONSTANTS, VARIABLES AND DATA AREAS
+***********************************************************************
+MOVENAME MVC   NAME(0),0(R1)
+MOVEDDN  MVC   DDNAME(0),0(R1)
+*
+PARSADDR DC    V(PARMTAB)
+H6       DC    H'6'
+H255     DC    H'255'
+BLDLHEAD DC    H'1'
+         DC    H'76'
+*
+I3PAT    DC    XL4'F0202120'
+BLANKS   DC    CL8'        '
+STEPLIB  DC    CL8'STEPLIB '
+IGC00      DC    CL5'IGC00'
+MINOR    DC    CL5'minor'
+RMODE24  DC    CL3'24 '
+AMODE24  EQU   RMODE24,2
+LINKLIB  DC    CL21'SYS1.LINKLIB         '
+LLIB     DC    CL16'LINKLIST library'
+JSLIB    DC    CL16'JOB/STEP/TASKLIB'                         DRK APR23
+LPAQ     DC    CL19'on active LPA Queue'
+ON       EQU   LPAQ,2
+LPAD     DC    CL16'in LPA Directory'
+*
+ZONEMASK DC    XL8'0F0F0F0F0F0F0F0F'
+HEXTAB   DC    CL16'0123456789ABCDEF'
+*
+DCB      DCB   DDNAME=DUMMY,MACRF=R,DSORG=PO
+LDCB     EQU   *-DCB
+*
+OPENL    OPEN  (*-*),MODE=31,MF=L        * MF=L OPEN MACRO
+LOPENL   EQU   *-OPENL
+*
+CLOSEL   CLOSE (*-*),MODE=31,MF=L        * MF=L CLOSE MACRO
+LCLOSEL  EQU   *-CLOSEL
+*
+CAMLST   CAMLST NAME,CAMLST,,CAMLST      * SKELETON CAMLST MACRO
+LCAMLST  EQU   *-CAMLST
+* MESSAGE SKELETONS
+MSG0      DS    0F
+         DC    C'XXXXXXXX not found in LPA/LINKLIST/Private library'
+MSG0NAME EQU    0,8
+LMSG0     EQU   *-MSG0
+*
+MSG1     DS    0F
+         DC    C'XXXXXXXX is XXXXXX bytes at XXXXXXXX                  +
+                 '
+MSG1NAME EQU   0,8
+MSG1LEN  EQU   12,6
+MSG1ADDR EQU   28,8
+MSG1MLOC EQU   37,16
+LMSG1    EQU   *-MSG1
+MSG1A    DC    C' (Alias of XXXXXXXX)'
+MSG1TNAM EQU   LMSG1+11,8
+LMSG1A   EQU   *-MSG1
+*
+MSG2     DS    0F
+         DC    C'         Relocated entry point at XXXXXXXX is AMODE 31+
+                '                                             DRK MAR23
+MSG2NAME EQU   0,8
+MSG2EPA  EQU   34,8
+MSG2AMOD EQU   52,2
+LMSG2    EQU   *-MSG2
+*
+MSG3     DS    0F
+         DC    C'XXXXXXXX is SVC ??? (Type 1), entry point at XXXXXXXX'
+MSG3NAME EQU   0,8
+MSG3SVCN EQU   15,4
+MSG3TYPE EQU   26,1
+MSG3ADDR EQU   45,8
+LMSG3    EQU   *-MSG3
+*
+MSG4     DS    0F
+         DC    C'XXXXXXXX found as a major name at TTR XXXXXX in privat+
+               e library  (XX)'
+MSG4NAME EQU   0,8
+MSG4MTYP EQU   20,5
+MSG4TTR  EQU   38,6
+MSG4LTYP EQU   48,12
+MSG4CCAT EQU   66,2
+LMSG4    EQU   *-MSG4
+MSG4A    DC    C'         DSN =                                        +
+                              '
+MSG4DSNM EQU   LMSG4+15,44
+LMSG4A   EQU   *-MSG4A
+LMSG4T   EQU   *-MSG4
+*
+MSG5     DS    0F
+         DC    C'         Module length is XXXXXX, RMODE ANY; entry poi+
+               nt at XXXXXX is AMODE 31 '                     DRK MAR23
+MSG5NAME EQU   0,8
+MSG5LEN  EQU   26,6
+MSG5RMOD EQU   40,3
+MSG5EPA  EQU   60,6
+MSG5AMOD EQU   76,2
+LMSG5    EQU   *-MSG5
+*
+MSG6     DS    0F
+         DC    C'XXXXXXXX is an alias of XXXXXXXX'
+MSG6NAME EQU   0,8
+MSG6TRNM EQU   24,8
+LMSG6    EQU   *-MSG6
+         DC    C', entry point at XXXXXX'
+MSG6EPA  EQU   LMSG6+17,6
+LMSG6A   EQU   *-MSG6
+*
+OPENMSG  DS    0F
+         DC    C'Unable to OPEN DDname XXXXXXXX - not allocated ?'
+MSGODDNM EQU   22,8
+OPENMSGL EQU   *-OPENMSG
+*
+BLDLMSG  DS    0F
+         DC    C'BLDL failed for member XXXXXXXX'
+MSGBNAME EQU   23,8
+BLDLMSGL EQU   *-BLDLMSG
+* PARAMETER CONTROL LIST FOR IKJPARS
+PARMTAB  IKJPARM DSECT=IKJPARMD
+PARMTAB  AMODE 31
+PARMTAB  RMODE 24
+MEMPDE   IKJIDENT 'MEMBER NAME',MAXLNTH=8,FIRST=ALPHA,                 +
+               OTHER=ALPHANUM,PROMPT='NAME OF MEMBER TO LOCATE'
+DDNKWD   IKJKEYWD
+         IKJNAME  'DDNAME',SUBFLD=DDSUBF,ALIAS=('IN')
+DDSUBF   IKJSUBF
+DDNPDE   IKJIDENT 'DDNAME',MAXLNTH=8,FIRST=ALPHA,OTHER=ALPHANUM,       +
+               PROMPT='DDNAME OF CONCATENATION TO BE SCANNED'
+         IKJENDP
+*
+* PARSE DESCRIPTOR ELEMENT FOR 'MEMBER' AND DDNAME PARAMETERS
+*
+PDE      DSECT
+PDEOPADR DS    A                         * @(OPERAND)
+PDEOPLEN DS    H                         * L'OPERAND
+PDEFLAGS DS    BL1                       * FLAG BYTE
+PDEFPRES EQU   X'80'                     *   OPERAND PRESENT FLAG
+         DS    XL1                       * RESERVED
+* WORKAREA DSECT
+WORKAREA DSECT
+*
+SAVEAREA DS    18F
+*
+TMP8     DS    D
+*
+STPPL    DS    8F                        * IKJPARS PARAMETER LIST
+CPECB    DS    F                         * ECB
+APDL     DS    A                         * @(PDL) SET BY IKJPARS
+*
+         DS    0F
+DCBW     DS    CL(LDCB)                  * BLDL DCB
+*
+         DS    0F
+OPENW    DS    CL(LOPENL)                * MF=L OPEN MACRO
+*
+         DS    0F
+CLOSEW   DS    CL(LCLOSEL)               * MF=L CLOSE MACRO
+*
+         DS    0F
+BLDLLIST DS    H                         * NUMBER OF ENTRIES
+         DS    H                         * ENTRY LENGTH
+BLNAME   DS    CL8                       * MEMBER NAME OR ALIAS
+BLTTR    DS    XL3                       * START TTR OF NAMED MEMBER
+BLK      DS    XL1                       * CONCATENATION NUMBER
+BLZ      DS    XL1                       * LIBRARY FLAG
+BLZPRIV  EQU   X'00'                     *   PRIVATE LIBRARY
+BLZLINK  EQU   X'01'                     *   LINKLIST LIBRARY
+BLZJOB   EQU   X'02'                     *   JOB/STEP/TASK LIBRARY
+BLC      DS    XL1                       * INDICATOR BYTE
+BLCALIAS EQU   X'80'                     *   NAME IS AN ALIAS IF SET
+*
+BLTTRTX1 DS    XL3                       * TTR OF FIRST TEXT RECORD
+BLZ2     DS    XL1                       * ZEROS
+BLTTRNL  DS    XL3                       * TTR OF NOTE LIST (IF ANY)
+BLNNOTEL DS    XL1                       * NUMBER OF NOTE LIST ENTRIES
+BLMATTR1 DS    XL2                       * MODULE ATTRIBUTES (1)
+BLA1RENT EQU   X'80'                     *   REENTRANT
+BLA1REUS EQU   X'40'                     *   REUSABLE
+BLA1EXEC EQU   X'02'                     *   EXECUTABLE
+BLA1REFR EQU   X'01'                     *   REFRESHABLE
+BLMODLN  DS    XL3                       * VIRTUAL STORAGE REQUIRED
+BLLTX1   DS    XL2                       * LENGTH OF FIRST TEXT RECORD
+BLEPADDR DS    XL3                       * MODULE ENTRY POINT
+BLMATTR2 DS    XL1                       * MODULE ATTRIBUTES (2)
+BLARMODE DS    XL1                       * AMODE/RMODE FLAGS
+BLRMANY  EQU   X'10'                     *   RMODE = ANY
+BLAMANY  EQU   X'03'                     *   AMODE = ANY      DRK MAR23
+BLAM31   EQU   X'02'                     *   AMODE = 31
+BLAM64   EQU   X'01'                     *   AMODE = 64       DRK MAR23
+BLRLDCNT DS    XL1                       * RLD COUNT
+BLBSEND  EQU   *
+*
+         ORG   BLBSEND
+BLLSCLST DS    XL2                       * LENGTH OF SCATTER LIST
+BLLTRTAB DS    XL2                       * LENGTH OF TRANSLATION TABLE
+BLLESDTX DS    XL2                       * ESDID FOR FIRST TEXT RECORD
+BLLESDEP DS    XL2                       * ESDID FOR ENTRY POINTS
+*
+         ORG   BLBSEND
+BLMEMEPA DS    XL3                       * EPA OF 'REAL' MEMBER
+BLMEMNAM DS    XL8                       * NAME OF 'REAL' MEMBER
+         DS    XL22
+         DS    XL32                                           DRK MAR23
+*
+SWEPAPTR DS    A              POINTER TO SWAREQ EPA           DRK APR23
+EPA      DS    CL28           SWAREQ EXTERNAL PARAMETER AREA  DRK APR23
+PARMLIST DS    12A            GENERAL PARAMETER LIST          DRK APR23
+*
+NAME     DS    CL8
+DDNAME   DS    CL8
+TRUENM   DS    CL8
+RETCODE  DS    F
+LNAME    DS    F
+PRIVLIB  DS    CL1
+NUCSVC   DS    XL1
+*
+         DS    0F
+CAMLSTW  DS    CL(LCAMLST)               * CAMLST FOR LOCATE
+*
+CAMDATA  DS    0D                        * CAMLST DATA AREA
+         DS    265CL1
+         ORG   CAMDATA
+VCOUNT   DS    H                         * VOLUME COUNT
+VDEVT    DS    XL4                       * DEVICE TYPE
+VSERIAL  DS    CL6                       * VOLUME SERIAL
+DSNSEQ   DS    H                         * DATASET SEQUENCE NUMBER
+         ORG
+*
+         DS    0F
+MSG      DS    CL160
+*
+WORKEND  EQU   *
+LWKAREA  EQU   *-WORKAREA
+*
+* SYSTEM DSECTS
+*
+         PRINT GEN,NODATA
+         IHAPSA LIST=NO
+         CVT    DSECT=YES
+         IHASCVT
+         IHASVC
+         IKJTCB LIST=NO
+         DCBD  DSORG=PS,DEVD=DA          * DCB MAPPING MACRO
+         DSECT
+         IEFJFCBN                        * JFCB MAPPING MACRO
+         PRINT GEN
+         DSECT                                                DRK APR23
+         IEFTIOT1                        * TIOT MAPPING MACRO DRK APR23
+         IEFZB505  LOCEPAX=YES           * SWAREQ MAPPING MACRO       "
+         IEFJESCT                        * JESCT MAPPING MACRO        "
+         IKJCPPL
+         IKJPPL
+         IHALPDE
+         IHACDE
+         IHAXTLST
+         END

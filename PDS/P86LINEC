@@ -1,0 +1,84 @@
+)Attr Default(`+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) pad('_') color(turq)
+   ! type(text) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(green) hilite(uscore)
+   # type(text) intens(high) color(blue)
+   + type(text) intens(low ) color(turq)
+     skip(on)
+   ¬ area(SCRL) Extend(ON)
+)Body Window(72,21)
+ ~Command+ ~Function+
+¬help ----------------------------------------------------------------¬
+)Area Help
+!MEMLIST Source Member List:
+    #ALC +- Allocate dataset and member prompt
+    #DST +- DSAT command
+    #EQ  +- Edit member with EQUAL macro
+    #GEN +- View/Edit a PDSE V2 member generation
+    #LP  +- LPR print member on network printer
+    #PREP+- CLIST for Panel preprocessing using ISPPREP
+    #EXec+- EXECute member in DSNAME library
+    #RUn +- EXECute member in DSNAME library
+    #RCV +- RECEIVE member in DSNAME library
+    #RED +- REVEDIT member in DSNAME library
+    #RVIV+- RESTORE deleted versions of member in DSNAME library
+    #RNS +- RENAME member datambr SWAP for PDSE
+    #SHAn+- SHAnSUM member in DSNAME library (n=1,2,3,5)
+    #SHA4+- SHA224S member in DSNAME library
+    #TRY +- Edit member with TRYIT macro
+!MEMLIST Load Member List:
+    #ALC +- Allocate dataset and member prompt
+    #NONE+- Turn off load module attributes RENT REFR REUS
+    #JCL +- Map JCL Command
+    #EX  +- EXecute TSO Command
+    #RV  +- Review member in DSNAME library
+    #CS  +- Display CSECTs for load module
+    #VLM +- File Manager view load module information
+    #LIM +- LISTMOD module
+    #LIME+- LISTMOD module ENTRY
+    #LHE +- LISTHEAD module
+    #LHEE+- LISTHEAD module ENTRY
+    #SHAn+- SHAnSUM member in DSNAME library (n=1,2,3,5)
+    #SHA4+- SHA224S member in DSNAME library
+!List Files:
+    #ALC +- Allocate dataset prompt
+    #CHGS+- MATCH DSNAME CHANGED SUBLIST
+    #CMP +- COMPARE current data set to DSNAME
+    #DSAT+- DSAT for DSNAME
+    #INFO+- Display dataset information
+    #LC  +- LISTCAT for entry name DSNAME
+    #LIKE+- Allocate a new data set based on DSNAME
+    #PGL +- PGLITE® for DSNAME
+    #RAC +- RACF LISTDSD and SEARCH for DSNAME
+    #REV +- REVIEW for DSNAME
+    #RMMI+- RMM tape inquiry for DSNAME
+    #TI  +- CA-1 tape inquiry for DSNAME
+    #VS  +- VSAM information for DSNAME
+    #WG  +- WHOSGOT command for data set DSNAME
+    #XMIT+- XMIT for DSNAME
+!List Volumes:
+    #DVOL+- DVOL command
+    #DEAV+- Display LSPACE enhanced information   (EAV support)
+    #DSPC+- Display space utilization information (EAV support)
+!List Allocations:
+    #DSAT+- DSAT for data set DSNAME
+    #DVOL+- DVOL command for volume VOLSER
+    #INFO+- Display dataset information
+    #LC  +- LISTCAT for entry name DSNAME
+    #LIKE+- Allocate a new data set based on DSNAME
+    #REV +- REVIEW for data set DSNAME
+    #WG  +- WHOSGOT command for data set DSNAME
+!ACTIVE Catalog Display:
+    #AL  +- List catalog connect information and alias list
+    #LI  +- List catalog connect information
+    #RC  +- Run RCNVTCAT against this catalog
+    #US  +- List all catalog usage information
+    #VT  +- List Volume Table of Contents
+   #CAT  +- List all catalog information (IDCAMS)
+)Init
+&zwinttl = 'PDS User Defined Line Commands'
+&zup = P86LINEC
+)Proc
+)End

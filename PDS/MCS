@@ -1,0 +1,26 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      MCS                                             |
+ |                                                            |
+ | Function:  The MCS edit macro is used to build FUNCTION,   |
+ |            APAR, PTF, or USERMOD MCS statements at the     |
+ |            beginning of a member.                          |
+ |                                                            |
+ | Use:       MCS usermod(user001) rework(20140621)           |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |             6/21/24 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+"ISREDIT MACRO (PARM)"
+if parm = "" then
+  parm = "USERMOD(USER001) REWORK("date('s')")"
+mcs1 = translate("++"parm" .")
+mcs2 = "++VER(Z038) .       "
+Address ISREDIT
+"line_before .zfirst = (mcs2)"
+"line_before .zfirst = (mcs1)"
+exit

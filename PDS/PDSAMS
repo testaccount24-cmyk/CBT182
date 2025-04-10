@@ -1,0 +1,79 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PDSAMS                                          |
+ |                                                            |
+ | Function:  The PDSAMS exec is used to run an IDCAMS        |
+ |            command.                                        |
+ |                                                            |
+ | Install:   Add IDCAMS as a primary command extension.      |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |            %IDCAMS+ Run IDCAMS command                     |
+ |                                                            |
+ |            IDCAMS,'CMD(%PDSAMS &OPERAND)'                  |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            12/27/23 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+parse upper arg command
+
+Input:
+if command = '' then do
+  say 'Enter IDCAMS command:'
+  pull command
+  signal Input
+  end
+
+Address TSO
+"NEWSTACK"
+
+if length(command) > 210 then do
+  queue " "substr(command,1,70)||"-"
+  queue " "substr(command,71,70)||"-"
+  queue " "substr(command,141,70)||"-"
+  queue " "substr(command,211,40)
+  end
+else
+  if length(command) > 140 then do
+    queue " "substr(command,1,70)||"-"
+    queue " "substr(command,71,70)||"-"
+    queue " "substr(command,141,70)
+    end
+  else
+    if length(command) > 70 then do
+      queue " "substr(command,1,70)||"-"
+      queue " "substr(command,71,70)
+      end
+    else
+      queue " "command
+
+queue
+
+Address TSO
+"ALLOC F(SYSIN) UNIT(VIO) NEW REUSE SPACE(1,1) TRACKS",
+  "LRECL(80) RECFM(F)"
+"EXECIO * DISKW SYSIN (FINIS"
+"DELSTACK"
+
+"ALLOC F(SYSPRINT) UNIT(VIO) NEW REUSE SPACE(1,1) TRACKS",
+  "LRECL(121) RECFM(F B A)"
+
+Address LINKMVS "IDCAMS"
+
+Address ISPEXEC
+"ISPEXEC LMINIT DATAID(ID) DDNAME(SYSPRINT) ENQ(EXCLU)"
+If rc ¬= 0 Then
+  Do
+    Say LMINIT failed
+    Exit 12
+  End
+"ISPEXEC VIEW DATAID("id")"
+"ISPEXEC LMFREE DATAID("id")"
+
+Address TSO
+"FREE F(SYSPRINT SYSIN)"
+Exit

@@ -1,0 +1,53 @@
+)Attr Default(`+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) pad('_') color(turq)
+   ! type(text) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(green) hilite(uscore)
+   # type(text) intens(high) color(blue)
+   + type(text) intens(low ) color(turq)
+     skip(on)
+   ¬ area(SCRL) Extend(ON)
+)Body Window(72,21)
+ ~Command~Function+
+¬help ----------------------------------------------------------------¬
+)Area Help
+ #>      +Switch to output DSNAME used in last COPY subcommand
+ #ADM    +RACF security administration (RACFADM)
+ #APF    +Add APF libraries to LISTF table
+ #CBT    +The Official CBT ISPF Application
+ #CHEAT  +PDS cheat sheet for long subcommands
+ #CHGM   +CHANGE dataset menu
+ #COPMSG +Extract XMIT/IEBCOPY summary messages from SYSOUT
+ #EDITLOG+Edit ISPMODE Log with ISPF
+ #EDSL   +Lionel Dyck Enhanced Data Set List
+ #FAMS   +Dan Dalby FAMS attribute extract
+ #FLIP   +Switch between current and previous data sets
+ #FP     +FInd ISPF packed members
+ #GLOBAL +Run subcommand for each file in LISTC table
+ #GO     +CHANGE to ddname concat#
+ #IDCAMS +Run IDCAMS command
+ #INFO   +Display dataset information
+ #IRL    +Last 30 Referenced DSNAMEs
+ #LMOD   +Locate executable module in LPA, LINKLIB, LNKLST, or STEPLIB
+ #LNK    +Add LINKlist libraries to LISTF table
+ #LPA    +Add LPA libraries to LISTF table
+ #MBRGEN +Lionel Dyck PDSE V2 member generations dialog
+ #MODEL  +Allocate a new data set based on the active data set
+ #MSG    +Display PDS message (e.g., msg pds100)
+ #PACK   +Lionel Dyck Pack dataset with TRSMAIN
+ #PARM   +Add PARMLIB libraries to LISTF table
+ #PDSC   +PDS Command Shell
+ #PGLITE +A simpler version, or subset, of PDSEGEN
+ #PRDS   +Bill Smith PRINTDS dialog
+ #QR     +PDS Quick Reference
+ #UNPACK +Lionel Dyck Unpack dataset with TRSMAIN
+ #VB2FB  +Lionel Dyck Copy Variable->Fixed and Fixed->Variable
+ #VERS   +Display PDS version number in Starboard area
+ #WB     +PDSE Work Bench (member generations)
+ #YALE   +Compare two PDS files with Yale COMPARE command
+)Init
+&zwinttl = 'PDS User Defined Commands'
+&zup = P86USERC
+)Proc
+)End

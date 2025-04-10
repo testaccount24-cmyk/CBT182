@@ -1,0 +1,35 @@
+)ATTR DEFAULT(%+_)
+    % TYPE(TEXT) INTENS(HIGH) COLOR(WHITE) SKIP(ON)
+    ¢ TYPE(TEXT) INTENS(HIGH) COLOR(YELLOW)
+    + TYPE(TEXT) INTENS(LOW)  COLOR(TURQ) SKIP(ON)
+    ~ TYPE(TEXT) INTENS(LOW)  COLOR(RED) SKIP(ON)
+    _ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED)
+    ¬ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED) PAD(_)
+    ¦ TYPE(INPUT) INTENS(HIGH) CAPS(OFF)
+)BODY EXPAND(\\)
+%Tutorial +-\-\-¢PDS Cheat Sheet+-\-\- %Tutorial
+%Command ===>_zcmd                                                             +
+%
++
+   The PDS cheat sheet is a panel that is displayed which allows you
+   to save and execute subcommands that are used repeatedly.  There is
+   no need to memorize and type long and complex subcommands.  The
+   command selection numbers are point-and-shoot fields.  Each
+   subcommand can be up to 244 characters long.
+
+   When selected (by number or PAS), the saved commands can be
+   modified on the next screen as shown below.
+
+  %.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+
+                         ¢PDS Subcommand Modification+
+
+  %Command ===>+
+
+   Modify %===>~vtoc cbtu03 level(ad tridjk) sort(alloc,d,volume,a,dsname,a)
+
+
+                    %<===
+)PROC
+  &zup = P86CHET0
+)END

@@ -1,0 +1,27 @@
+)ATTR
+   Ý   TYPE(TEXT) INTENS(HIGH) COLOR(RED)
+)BODY
+%TUTORIAL ----------------- EDIT - 'ZAPCTL' MACRO --------------------- TUTORIAL
+%COMMAND ===>_ZCMD                                                             +
++
++The%ZAPCTL+macro is used to generate AMASPZAP VER/REP statements from
++PDS LIST module csect output.
++
++Use:
++Type%ZAPCTL module csect+on the command line
++
+%COMMAND ===> zapctl deav deav
+%Before:+
+ 000003  PDS141I AT 000000  CSECT DEAV      LENGTH 0008FA
+ %c2+04    000000 0000  A7F4000E C4C5C1E5  40404040 F0F461F0  *x4..DEAV    04/0*
+ 000005    000010 0010  F361F2F2 40404040  40404040 90ECD00C  *3/22        ..}.*
+%After:+
+ 000003  PDS141I AT 000000  CSECT DEAV      LENGTH 0008FA
+ 000004    000000 0000  A7F4000E C4C5C1E5  40404040 F0F461F0  *x4..DEAV    04/0*
+ 000005    000010 0010  F361F2F2 40404040  40404040 90ECD00C  *3/22        ..}.*
+Ý==MSG>+  %NAME  DEAV DEAV
+Ý==MSG>+  %VER   0000   A7F4000E,C4C5C1E5,40404040,F0F461F0   *x4..DEAV    04/0*
+Ý==MSG>+  %VER   0010   F361F2F2,40404040,40404040,90ECD00C   *3/22        ..}.*
+Ý==MSG>+  %REP   0000   A7F4000E,C4C5C1E5,40404040,F0F461F0   *x4..DEAV    04/0*
+Ý==MSG>+  %REP   0010   F361F2F2,40404040,40404040,90ECD00C   *3/22        ..}.*
+)END

@@ -1,0 +1,79 @@
+//TSO      EXEC  PGM=IKJEFT01,REGION=32M
+//STEPLIB  DD  DISP=SHR,DSN=SYS1.CBT.LINKLIB
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+delete pds.asm
+delete pds.clist
+delete pds.doc
+delete pds.exec
+delete pds.exits
+delete pds.help
+delete pds.install
+delete pds.msgs
+delete pds.other
+delete pds.panels
+delete pds.smp
+delete pds.tsotest
+delete pds.windoc
+delete pds.xmit
+delete pds.temp
+
+pds 'ad.file182.github'
+copy : pds.temp new vol(cbtref)
+
+change pds.temp
+copy ($:)               +
+  pds.doc     new space(100) dir(25)
+copy (smp:)             +
+  pds.smp     new space(5)  dir(5)
+copy (@: #: m$:)        +
+  pds.asm     new space(125) dir(25)
+copy (vsub: vtso:)      +
+  pds.exits   new space(5)   dir(5)
+copy (p86: pds@prim)    +
+  pds.panels  new space(70)  dir(100)
+copy (pdsm86)           +
+  pds.msgs    new space(1)   dir(1)
+copy ($$$$read $$$doc $$$inst $$$qwik pdsjclhl pdspjcl +
+      pdsjclut pdsqinst qwikfix) +
+  pds.install new space(20)   dir(5)
+copy (tsotest: $$$$TEST idf:) +
+  pds.tsotest new space(2)   dir(5)
+copy (pdshelp)          +
+  pds.help    new space(20)  dir(1)
+copy (doc: pcx: ppt: zip:) +
+  pds.windoc  new space(75)  dir(10)
+find : ' rexx ' ignore maxin(3) then(sublist)
+copy *                  +
+  pds.exec    new space(40)  dir(10)
+find : 'proc '  ignore maxin(1) then(sublist)
+copy *                  +
+  pds.clist   new space(5)   dir(5)
+if : id(xmit)   then(sublist)
+copy *                  +
+  pds.xmit    new space(150) dir(5)
+
+delete ($:)
+delete (smp:)
+delete (@: #: m$:)
+delete (vsub: vtso:)
+delete (p86: pds@prim)
+delete (pdsm86)
+delete ($$$$read $$$doc $$$inst $$$qwik pdsjclhl pdspjcl +
+      pdsjclut pdsqinst qwikfix)
+delete (tsotest: $$$$TEST idf:)
+delete (pdshelp)
+delete (doc: pcx: ppt: zip:)
+find : ' rexx ' ignore maxin(3) then(sublist)
+delete *
+find : 'proc '  ignore maxin(1) then(sublist)
+delete *
+if : id(xmit)   then(sublist)
+delete *
+
+copy :                  +
+  pds.other   new space(50)  dir(15)
+end
+
+delete pds.temp
+dsat pds

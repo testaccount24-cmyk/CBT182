@@ -1,0 +1,60 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PDSSTATS                                        |
+ |                                                            |
+ | Function:  The PDSSTATS exec is used to ADDSTATS to a      |
+ |            member.  If the member does not exist, then     |
+ |            a null member will be added with PDSLOAD.       |
+ |                                                            |
+ | Install:   Add STATS as a primary command extension        |
+ |            in PDS.                                         |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |              %STATS + ADDSTATS to a member                 |
+ |                STATS,'CMD(%PDSSTATS ''&PDSDSN'' &OPERAND)' |
+ |                                                            |
+ | Use:       STATS member                                    |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            04/27/23 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+trace
+arg dsn mbr
+
+if left(dsn,1) = "'" then
+  dsn = strip(dsn,,"'")
+else
+  dsn = userid()'.'dsn
+
+x = sysdsn("'"dsn"("mbr")'")
+if x = 'OK' then do
+  "pds '"dsn"' attrib "mbr" addstats"
+  exit
+  end
+
+ispdt = date('J')
+isptm = left(time(),2)||substr(time(),4,2)
+ispid = left(userid(),8)
+
+"newstack"
+/*
+./ ADD NAME=MEMBER   0100-YYDDD-YYDDD-HHMM-00000-00000-00000-USERID  00
+*/
+queue './ ADD NAME='||left(mbr,9)||'0100-'||ispdt||'-'||ispdt||,
+      '-'||isptm||'-00000-00000-00000-'||ispid||'00'
+queue
+
+"alloc f(stats) shr reuse da('"dsn"($stats$)')"
+"execio * diskw stats (finis"
+"delstack"
+
+delete. = ''
+x = outtrap('delete.','*')
+"pds '"dsn"'" load $stats$ "'"dsn"'"
+say substr(delete.5,32,32)
+x= outtrap('off')
+exit

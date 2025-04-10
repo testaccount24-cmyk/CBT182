@@ -1,0 +1,35 @@
+//TSO      EXEC  PGM=IKJEFT1A,REGION=8M
+//*
+//*  List updates to the PDS command:  1997-2023              DRK JUN23
+//*
+//STEPLIB  DD  DSN=SYS1.CBT.LINKLIB,DISP=SHR
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+pds 'ad.file182.pds484'
+search @: '23' col(70:71)
+search @: '22' col(70:71)
+search @: '21' col(70:71)
+search @: '20' col(70:71)
+search @: '19' col(70:71)
+search @: '18' col(70:71)
+search @: '17' col(70:71)
+search @: '16' col(70:71)
+search @: '15' col(70:71)
+search @: '14' col(70:71)
+search @: '13' col(70:71)
+search @: '12' col(70:71)
+search @: '11' col(70:71)
+search @: '10' col(70:71)
+search @: '09' col(70:71)
+search @: '08' col(70:71)
+search @: '07' col(70:71)
+search @: '06' col(70:71)
+search @: '05' col(70:71)
+search @: '04' col(70:71)
+search @: '03' col(70:71)
+search @: '02' col(70:71)
+search @: '01' col(70:71)
+search @: '00' col(70:71)
+search @: '99' col(70:71)
+search @: '98' col(70:71)
+search @: '97' col(70:71)

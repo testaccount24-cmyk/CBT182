@@ -1,0 +1,41 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      XH2XHI                                          |
+ |                                                            |
+ | Function:  Edit macro to change AH, CH, LH, and MH         |
+ |            instructions to immediate format                |
+ |            (AHI, CHI, LHI, and MHI) if using halfword      |
+ |            literals.                                       |
+ |                                                            |
+ | Syntax:    XH2XHI                                          |
+ |                                                            |
+ | Test:      https://regexr.com/                             |
+ |                                                            |
+ | Author:    Janko                                           |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            08/14/23 - Add change count message             |
+ |            05/20/23 - Created                              |
+ |                                                            |
+ * ---------------------------------------------------------- */
+Address ISREdit
+"Macro"
+"Reset"
+"Exclude All"
+"Find All R'AH    RÝ0-9¨,=H' 10 30"
+"Find All R'AH    RÝ1¨Ý0-5¨,=H' 10 30"
+"Find All R'CH    RÝ0-9¨,=H' 10 30"
+"Find All R'CH    RÝ1¨Ý0-5¨,=H' 10 30"
+"Find All R'LH    RÝ0-9¨,=H' 10 30"
+"Find All R'LH    RÝ1¨Ý0-5¨,=H' 10 30"
+"Find All R'MH    RÝ0-9¨,=H' 10 30"
+"Find All R'MH    RÝ1¨Ý0-5¨,=H' 10 30"
+"Change All '=H' '' NX 16 30"
+"Change All '''  '' NX 16 30"
+"Change All ' ' 'I' NX 12 12"
+"(ccnt) = change_counts"
+ccnt = format(ccnt,8)
+"Hide Excluded"
+zedsmsg = ccnt "lines changed"
+zedlmsg = ccnt "lines were changed to immediate format"
+Address ISPExec "setmsg msg(isrz000)"
+exit

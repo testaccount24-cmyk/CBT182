@@ -1,0 +1,72 @@
+./ ADD NAME=DUMMY    0106-23042-23054-1139-00009-00031-00000-TRIDJK  46
+white space white space white space white space white space white space
+./ ADD NAME=BOOK     0106-23042-23054-1139-00009-00031-00000-TRIDJK  46
+/*REXX --------------------------------------------------------------*/
+/*                                                                   */
+/*   Invoke BookMangler.                                             */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+ Address TSO,                          /* Bookmanager LIBDEF's       */
+ 'ispstart cmd(%eoylibdf)'
+ 'Refresh'                             /* Refresh WDB screen         */
+ Exit                                  /* Exit                       */
+./ ADD NAME=PROFILE  0122-23042-23054-1128-00012-00007-00000-TRIDJK  12
+/*REXX --------------------------------------------------------------*/
+/*                                                                   */
+/*   ASMIDF Profile                                                  */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+'set color wytb'
+'pfk  4 Macro Book'        /* BookMangler HLASM ASMIDF Shelf     */
+'pfk 13 Minimize'          /* Minimize Window =nn                */
+'pfk 14 Maximize'          /* Maximize Window =nn                */
+'pfk 15 Close'             /* Close    Window =nn                */
+'set impmacro on'          /* Implied Rexx macro on command line */
+exit
+./ ADD NAME=REGS     0100-23042-23042-1451-00014-00014-00000-TRIDJK  08
+/*REXX --------------------------------------------------------------*/
+/*                                                                   */
+/* REGS    - Toggle the current registers window.                    */
+/*                                                                   */
+/*   When the REGS window is opened, it will be moved on the IDF     */
+/*   display so that it is the first window.                         */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+ 'Regs'                             /* Toggle REGS window            */
+ 'Extract Cursor'                   /* Obtain window information     */
+ n = Find(display,'REGS')           /* Is REGS window present?       */
+ If n ¬= 0 Then                     /* Yes?  Force to be 1st window  */
+   'Order ='n
+ Exit
+./ ADD NAME=SYSCMD   0100-23042-23042-1449-00031-00031-00000-TRIDJK  53
+/*REXX --------------------------------------------------------------*/
+/*                                                                   */
+/*   Issue the command to the system.                                */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+ Parse Arg cmd                      /* Obtain any operands           */
+ Parse Upper Source OpSys .         /* Determine current OS          */
+ Select
+   When (OpSys = 'TSO') Then        /* Handle TSO command            */
+     Do
+       Address TSO cmd              /* Issue command                 */
+       trc = rc
+       'Refresh'                    /* Refresh WDB screen            */
+     End
+  When (OpSys = 'CMS') Then        /* Handle CMS command            */
+    Do
+      Address CMS cmd              /* Issue command                 */
+      trc = rc
+    End
+  When (OpSys = 'VSE') Then        /* Handle VSE command            */
+    Do
+      Address VSE cmd              /* Issue command                 */
+      trc = rc
+    End
+  Otherwise
+    Do
+      'SET MSG Not on TSO or CMS or VSE - Unable to issue command'
+      trc = -3
+    End
+End
+Exit trc

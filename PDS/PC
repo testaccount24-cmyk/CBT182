@@ -1,0 +1,46 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PC                                              |
+ |                                                            |
+ | Function:  The PC exec is used to invoke the PDS command   |
+ |            processor as an action (line) command in a      |
+ |            SDSF display of PARM, APF, LNK, LPA, or PROC    |
+ |            list of datasets.                               |
+ |                                                            |
+ |            SDSF PARMLIB DISPLAY                            |
+ |            COMMAND INPUT ===>                              |
+ |            NP   DSNAME           Seq VolSer BlkSize        |
+ |                 SYS1.CBT.PARMLIB   1 CBTCAT   27920        |
+ |            %pc  SYS1.IBM.PARMLIB   2 CBTCAT   27920        |
+ |                                                            |
+ |                      ISPMODE Session Display 1             |
+ |             Command ===>                                   |
+ |            Enter an ISPF command, a PDS subcommand or a    |
+ |             - DSN=SYS1.CBT.PARMLIB,VOL=SER=CBTCAT  MEM=  - |
+ |             PDS100I PDS86 -- VERSION 8.6.21.0  JANUARY 16, |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            02/12/24 - Issue msg after ISFGET error (WJS)   |
+ |            02/09/24 - Creation                             |
+ * ---------------------------------------------------------- */
+Parse Arg pSDSFParms "(" pUserParms
+Parse var pSDSFParms pCurrentPanel pPrimaryPanel pRowToken pPrimaryCmd .
+rc=isfquery()
+if rc <> 0 then do
+  Say "** SDSF environment does not exist, exec ending."
+  Exit 20
+  end
+rc=isfcalls('ON')
+Address SDSF "ISFGET" pPrimaryPanel "TOKEN('"pRowToken"')" ,
+" (" verbose ")"
+if rc <> 0 then do
+  Say "** SDSF ISFGET API call failed, exec ending."
+  Exit 20
+  end
+rc=isfcalls('OFF')
+Address ISPEXEC ,
+  "select pgm(pds86)",
+     "parm(PDS86 '"dsname.1"' volume("volser.1") ispmode)"
+Exit 0

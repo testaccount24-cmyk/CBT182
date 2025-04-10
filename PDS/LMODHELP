@@ -1,0 +1,147 @@
+)F Function -
+On an MVS system a load module can reside in any or all of several
+places:  in the Link Pack Area (LPA), in SYS1.LINKLIB, or a member of
+the linklist concatenation, in a JOB or STEP library, or in a private
+load library such as a member of the ISPLLIB concatenation.  If one is
+not sure from where a given module is being loaded and needs to know
+(eg: if copies exist in several places), the program described here
+should be of some use.
+
+)X Syntax -
+     LMOD module DDNAME(ddname)
+
+ Aliases  - none.
+ Required - module
+)O Operands -
+  module         - specifies load module name.
+
+))DDNAME(ddname) - optional, specifies the ddname of a private library/
+                   private library concatenation.
+
+The LMOD program, written as a TSO command processor, may be invoked
+with just the name of the load module of interest, eg:
+
+    LMOD IEFUTL
+
+or with the load module name and the DDNAME of a private library/
+private library concatenation where it is suspected the module may be
+located, eg:
+
+    LMOD AMSP0000 DDNAME(ISPLLIB)
+
+
+The processing performed by LMOD consists of the following steps:
+
+1) The command is parsed via a call to IKJPARS.
+
+2) If no DDNAME was specified, processing jumps to step 4 below.
+
+3) If a DDNAME was specified, it is OPENed and a BLDL macro
+   issued for the specified member name. The DDNAME is then
+   CLOSEed, and if the module was found, processing jumps to step
+   8 below. If the module was not found, processing continues with
+   the next step.
+
+4) The active LPA queue is scanned for a Contents Directory Entry
+   (CDE) for the module. If one is found, and it is a minor CDE (ie:
+   the module name is an alias), the corresponding major CDE is
+   located and the true name of the module extracted. The module's
+   Extent List (XTLST) is located and its length and start address
+   extracted. Messages of the form:
+
+       MODNAME is length bytes at address on active LPA Queue
+       (alias of TRUENAME)
+       Relocated entry point at address is AMODE am
+
+   are built and issued via TPUTs to the terminal. The (alias of ...)
+   text is only present if MODNAME is an alias. The entry point
+   address comes from the module's CDE, and the AMODE (31 or
+   24 or 64 or ANY) is deduced from the entry point address.
+
+5) The LPA Directory is scanned for the module via a call to the LPA
+   Directory Scan Routine, IEAVVMSR, the address of which is in
+   CVTLPDSR. If a Link Pack Directory Entry (LPDE) is found,
+   and is a minor (alias) LPDE, a second scan is made for the
+   corresponding major LPDE for the module's true name. Having
+   found the LPDE(s), messages of the form:
+
+       MODNAME is length bytes at address in LPA Directory
+       (alias of TRUENAME)
+       Relocated entry point at address is AMODE am
+
+   are built and issued. In this case all the required information is
+   contained in the LPDE(s).
+
+6) If the name of the module starts 'IGC', it could be an SVC. If the
+   name is of the form 'IGCnnn', where 'nnn' is between 000 and
+   255, it could be a Nucleus SVC; if the name is of the form
+   IGC00nnn it could be an LPA-resident SVC. In either case, the
+   SVC table entry corresponding to the value of nnn is located and
+   the data therein is used to build message(s) of the form:
+
+       MODNAME is SVC nnn (Type n), entry point at address
+       MODNAME is an alias of TRUENAME
+
+   The second message is issued in the case of a module that has
+   already been found as an alias in the LPA by the previous steps,
+   and hence whose true name is also known.
+
+7) A linklist/STEPLIB BLDL is issued to locate any copy of the
+   module in either of these locations. If nothing is found, processing
+   jumps to step 9 below.
+
+8) At this point, a BLDL entry exists, either for the linklist/STEPLIB,
+   or for the private library if we have jumped here directly from
+   step 3.
+
+   If the BLDL entry indicates that the module is in SYS1.LINKLIB,
+   a message of the form:
+
+       MODNAME found as a type name at TTR ttttrr in SYS1.LINKLIB
+
+   where type is 'major' if MODNAME is the module's true name,
+   or 'minor' if it is an alias, and ttttrr is the relative track/record
+   location of the module in SYS1.LINKLIB.
+
+   If the BLDL entry indicates that the module is in a linklist dataset
+   other than SYS1.LINKLIB, the linklist table is scanned for the
+   appropriate entry, the name of the dataset extracted, and a LOCATE
+   issued to get its catalog entry. If the module is not in the
+   linklist, it must either be in the STEPLIB concatenation or the
+   private library concatenation. In either case, the TIOT is scanned
+   for the appropriate DDNAME and the required member of the
+   concatenation located. The address of the dataset's JFCB is
+   extracted from the TIOT entry and the name of the dataset and its
+   DASD volser extracted from the JFCB. Finally, messages of the form:
+
+       MODNAME found as a type name at TTR ttttrr in libtype (nn)
+       DSN=dataset.name on volser
+
+   are built and issued. As before, type is 'major' or 'minor' and
+   ttttrr is the module's location in the dataset. In addition, libtype
+   is either 'JOB/STEP library' or 'private library' as appropriate,
+   and n is the position of the dataset in the concatenation (00 is the
+   first, 01 the second, etc).
+
+   In all cases these messages are followed by a message of the form:
+
+       Module length is length, RMODE rm; entry point at offset is
+       AMODE am and, if the module name is an alias, by the message:
+
+       MODNAME is an alias of TRUENAME, entry point at offset where rm
+       is 'ANY' or '24', and am is '31' or '24' or '64' or 'ANY',
+       as indicated by the  BLDL entry.
+
+9) This completes the search for the module. If it was not found in
+   any of the searched locations, a message of the form:
+
+       MODNAME not found in LPA/LINKLIST/Private library
+       is issued.
+
+10) The program cleans up and exits.
+
+
+Author:    Peter Wright
+           Associate Consultant
+           Tessella Support Services (UK)
+           Xephon 1998

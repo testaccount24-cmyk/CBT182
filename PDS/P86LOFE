@@ -1,0 +1,32 @@
+)ATTR DEFAULT(%+_)
+    % TYPE(TEXT) INTENS(HIGH) COLOR(WHITE) SKIP(ON)
+    ¢ TYPE(TEXT) INTENS(HIGH) COLOR(YELLOW)
+    + TYPE(TEXT) INTENS(LOW)  COLOR(TURQ) SKIP(ON)
+    _ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED)
+    ¬ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED) PAD(_)
+    ¦ TYPE(INPUT) INTENS(HIGH) CAPS(OFF)
+)BODY EXPAND(\\)
++-\-\-¢RPFED line command+-\-\-
+%OPTION  ===>¦ZCMD                                                             +
+%
++Enter any operands below for%RPFED  &PDSMEM
+%===>¦LOPER
+                                                                               +
++
++Operands: %LINES(nnnnn)      -+specify number of lines to EDIT for MVS
+                                or 10*LINES for MVS/XA and above
+
+ Note:      Minimum is 200 lines for MVS or 2000 lines for MVS/XA or above.
+            Maximum is 30,000 lines for MVS or 300,000 lines for MVS/XA
+            or above.
++
++Defaults:  none
+)INIT
+  &LOPER  = '&OPERS'
+  .CURSOR = LOPER
+  .HELP   = P86OPHH
+  IF(&LOPER  = &Z) &LOPER=&P86#RF3
+)PROC
+ &P86#RF3=&LOPER
+ &PDSZSEL='Rpfed  &PDSMEM &LOPER'
+)END

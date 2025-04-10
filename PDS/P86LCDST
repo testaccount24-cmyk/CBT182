@@ -1,0 +1,115 @@
+)ATTR DEFAULT(%+_)
+    % TYPE(TEXT) INTENS(HIGH) COLOR(WHITE) SKIP(ON)
+    ¢ TYPE(TEXT) INTENS(HIGH) COLOR(YELLOW)
+    + TYPE(TEXT) INTENS(LOW)  COLOR(TURQ) SKIP(ON)
+    _ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED)
+    ¬ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED) PAD(_)
+    ¦ TYPE(INPUT) INTENS(HIGH) CAPS(OFF)
+)BODY EXPAND(\\)
++-\-\-¢Build LISTFILE using DSAT command+-\-\-
+%OPTION  ===>¦ZCMD                                                             +
+%
++Enter any one or more dataset levels or a complete dataset name (no quotes)
++The first entry is required.
++
+%LVL/DSN ===>_CDSN1                                       +
+%LVL/DSN ===>_CDSN2                         %===>_CDSN3
+%LVL/DSN ===>_CDSN4                         %===>_CDSN5
+%LVL/DSN ===>_CDSN6                         %===>_CDSN7
+%LVL/DSN ===>_CDSN8                         %===>_CDSN9
+%LVL/DSN ===>_CDSN10                        %===>_CDSN11
+%LVL/DSN ===>_CDSN12                        %===>_CDSN13
+%LVL/DSN ===>_CDSN14                        %===>_CDSN15
+%LVL/DSN ===>_CDSN16                        %===>_CDSN17
+%LVL/DSN ===>_CDSN18                        %===>_CDSN19
+%LVL/DSN ===>_CDSN20                        %===>_CDSN21
+%LVL/DSN ===>_CDSN22                        %===>_CDSN23
+%LVL/DSN ===>_CDSN24                        %===>_CDSN25
++
++The name specified is to be used as a%generic+key to locate
++data set names.  All data sets which match the key will be
++displayed.  The name need not specify an index level.
+
+)INIT
+  .CURSOR = CDSN1
+  .HELP   = P86LOHH
+  IF(&CDSN1 = &Z) &CDSN1 = &ZPREFIX
+)PROC
+ VER(&CDSN1,NB,DSNAME)
+ VER(&CDSN2,DSNAME)
+ VER(&CDSN3,DSNAME)
+ VER(&CDSN4,DSNAME)
+ VER(&CDSN5,DSNAME)
+ VER(&CDSN6,DSNAME)
+ VER(&CDSN7,DSNAME)
+ VER(&CDSN8,DSNAME)
+ VER(&CDSN9,DSNAME)
+ VER(&CDSN10,DSNAME)
+ VER(&CDSN11,DSNAME)
+ VER(&CDSN12,DSNAME)
+ VER(&CDSN13,DSNAME)
+ VER(&CDSN14,DSNAME)
+ VER(&CDSN15,DSNAME)
+ VER(&CDSN16,DSNAME)
+ VER(&CDSN17,DSNAME)
+ VER(&CDSN18,DSNAME)
+ VER(&CDSN19,DSNAME)
+ VER(&CDSN20,DSNAME)
+ VER(&CDSN21,DSNAME)
+ VER(&CDSN22,DSNAME)
+ VER(&CDSN23,DSNAME)
+ VER(&CDSN24,DSNAME)
+ VER(&CDSN25,DSNAME)
+ VPUT (CDSN1) PROFILE
+ VPUT (CDSN2) PROFILE
+ VPUT (CDSN3) PROFILE
+ VPUT (CDSN4) PROFILE
+ VPUT (CDSN5) PROFILE
+ VPUT (CDSN6) PROFILE
+ VPUT (CDSN7) PROFILE
+ VPUT (CDSN8) PROFILE
+ VPUT (CDSN9) PROFILE
+ VPUT (CDSN10) PROFILE
+ VPUT (CDSN11) PROFILE
+ VPUT (CDSN12) PROFILE
+ VPUT (CDSN13) PROFILE
+ VPUT (CDSN14) PROFILE
+ VPUT (CDSN15) PROFILE
+ VPUT (CDSN16) PROFILE
+ VPUT (CDSN17) PROFILE
+ VPUT (CDSN18) PROFILE
+ VPUT (CDSN19) PROFILE
+ VPUT (CDSN20) PROFILE
+ VPUT (CDSN21) PROFILE
+ VPUT (CDSN22) PROFILE
+ VPUT (CDSN23) PROFILE
+ VPUT (CDSN24) PROFILE
+ VPUT (CDSN25) PROFILE
+ &CDSNX = &Z
+ IF (&CDSN2 ¬= &Z) &CDSNX='''&CDSN2'''
+ IF (&CDSN3 ¬= &Z) &CDSNX='&CDSNX ''&CDSN3'''
+ IF (&CDSN4 ¬= &Z) &CDSNX='&CDSNX ''&CDSN4'''
+ IF (&CDSN5 ¬= &Z) &CDSNX='&CDSNX ''&CDSN5'''
+ IF (&CDSN6 ¬= &Z) &CDSNX='&CDSNX ''&CDSN6'''
+ IF (&CDSN7 ¬= &Z) &CDSNX='&CDSNX ''&CDSN7'''
+ IF (&CDSN8 ¬= &Z) &CDSNX='&CDSNX ''&CDSN8'''
+ IF (&CDSN9 ¬= &Z) &CDSNX='&CDSNX ''&CDSN9'''
+ IF (&CDSN10 ¬= &Z) &CDSNX='&CDSNX ''&CDSN10'''
+ IF (&CDSN11 ¬= &Z) &CDSNX='&CDSNX ''&CDSN11'''
+ IF (&CDSN12 ¬= &Z) &CDSNX='&CDSNX ''&CDSN12'''
+ IF (&CDSN13 ¬= &Z) &CDSNX='&CDSNX ''&CDSN13'''
+ IF (&CDSN14 ¬= &Z) &CDSNX='&CDSNX ''&CDSN14'''
+ IF (&CDSN15 ¬= &Z) &CDSNX='&CDSNX ''&CDSN15'''
+ IF (&CDSN16 ¬= &Z) &CDSNX='&CDSNX ''&CDSN16'''
+ IF (&CDSN17 ¬= &Z) &CDSNX='&CDSNX ''&CDSN17'''
+ IF (&CDSN18 ¬= &Z) &CDSNX='&CDSNX ''&CDSN18'''
+ IF (&CDSN19 ¬= &Z) &CDSNX='&CDSNX ''&CDSN19'''
+ IF (&CDSN20 ¬= &Z) &CDSNX='&CDSNX ''&CDSN20'''
+ IF (&CDSN21 ¬= &Z) &CDSNX='&CDSNX ''&CDSN21'''
+ IF (&CDSN22 ¬= &Z) &CDSNX='&CDSNX ''&CDSN22'''
+ IF (&CDSN23 ¬= &Z) &CDSNX='&CDSNX ''&CDSN23'''
+ IF (&CDSN24 ¬= &Z) &CDSNX='&CDSNX ''&CDSN24'''
+ IF (&CDSN25 ¬= &Z) &CDSNX='&CDSNX ''&CDSN25'''
+ /* xxxx in following command is where the buf control word is placed*/
+ &PDSZSEL='xxxxdsat (''&CDSN1'' &CDSNX ) DEVTYP LASTREF GENERIC'
+)END

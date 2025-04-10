@@ -1,0 +1,46 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      PDSTOUCH                                        |
+ |                                                            |
+ | Function:  The PDSTOUCH exec is used to ADDSTATS to a      |
+ |            member.  If the member does not exist, then     |
+ |            a null member will be added with REPRO.         |
+ |                                                            |
+ | Install:   Add TOUCH as a primary command extension        |
+ |            in PDS.                                         |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |              %TOUCH + ADDSTATS to a member                 |
+ |                TOUCH,'CMD(%PDSTOUCH ''&PDSDSN'' &OPERAND)' |
+ |                                                            |
+ | Use:       TOUCH member                                    |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            07/28/23 - Use REPRO instead of PDSLOAD         |
+ |            04/27/23 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+trace
+arg dsn mbr
+
+if left(dsn,1) = "'" then
+  dsn = strip(dsn,,"'")
+else
+  dsn = userid()'.'dsn
+
+x = sysdsn("'"dsn"("mbr")'")
+if x = 'OK' then do
+  "pds '"dsn"' attrib "mbr" addstats"
+  exit
+  end
+
+"repro ids('nullfile') ods('"dsn"("mbr")')"
+x = sysdsn("'"dsn"("mbr")'")
+if x = 'OK' then do
+  "pds '"dsn"' attrib "mbr" addstats"
+  exit
+  end
+exit

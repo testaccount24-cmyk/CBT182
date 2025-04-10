@@ -1,0 +1,47 @@
+To install the Steve Kleeves VSAM Information dialog (CBT File 137).
+
+1.  TSO RECEIVE the VSAMXMIT member.
+2.  Copy panels VI#1 and VI#1H to an ISPPLIB dataset.
+3.  Copy rexxes VI, VIX, and RXDATE to a SYSPROC or SYSEXEC dataset.
+
+To run the VSAM Information dialog.
+
+1.  Enter the VS line command on the PDS LISTC function display.
+2.  Enter the VI line command on the ISPF 3.4 DSLIST display.
+3   Enter VIX 'dsn' on a command line.
+
+Note: Use the VIX rexx exec if you need to define LIBDEF's.
+      First, it must be customized with your own exec and panel DSN's.
+
+IDCAMS define sample:
+
+ DELETE TRIDJK.VSAM.KSDS.CLUSTER CLUSTER
+
+ DEFINE CLUSTER -
+          (NAME(TRIDJK.VSAM.KSDS.CLUSTER) -
+           INDEXED               -
+           VOLUMES(CBTU03)       -
+           RECORDS(100 50))      -
+         DATA                    -
+          (NAME(TRIDJK.VSAM.KSDS.DATA) -
+           RECORDSIZE(80 100)    -
+           FREESPACE(20 10)      -
+           BUFFERSPACE(25000)    -
+           KEYS(4 0))            -
+         INDEX -
+           (NAME(TRIDJK.VSAM.KSDS.INDEX))
+ DEFINE AIX  -
+          (NAME(TRIDJK.VSAM.KSDS.CLUSTER.AIX) -
+           RELATE(TRIDJK.VSAM.KSDS.CLUSTER) -
+           VOLUMES(CBTU03) -
+           CISZ(4096) -
+           KEYS(20,4) -
+           NONUNIQUEKEY -
+           NOUPGRADE-
+           RECORDSIZE(29,29)-
+           CYLINDERS(1,1)-
+           FREESPACE(10,10))
+ DEFINE PATH -
+          (NAME(TRIDJK.VSAM.KSDS.CLUSTER.PATH) -
+           PATHENTRY(TRIDJK.VSAM.KSDS.CLUSTER.AIX) -
+           NOUPDATE)

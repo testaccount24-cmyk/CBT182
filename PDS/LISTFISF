@@ -1,0 +1,85 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      LISTFISF                                        |
+ |                                                            |
+ | Function:  The LISTFISF exec is used to add datasets       |
+ |            to the LISTC/LISTF table.                       |
+ |                                                            |
+ | Install:   Add APF/LPA/LNK as primary command extensions.  |
+ |                                                            |
+ |            <Panel P86OPUX>                                 |
+ |            %APF+ Add APF datasets to LISTF                 |
+ |            %LPA+ Add LPA datasets to LISTF                 |
+ |            %LNK+ Add LNK datasets to LISTF                 |
+ |            %PARM+Add PARM datasets to LISTF                |
+ |                                                            |
+ |              APF,'CMD(%LISTFISF APF)'                      |
+ |              LPA,'CMD(%LISTFISF LPA)'                      |
+ |              LNK,'CMD(%LISTFISF LNK)'                      |
+ |             PARM,'CMD(%LISTFISF PARM)'                     |
+ |                                                            |
+ | Required:  SDSF ISFEXEC interface                          |
+ |                                                            |
+ | Author:    Janko Kalinic                                   |
+ |            The ISPF Cabal - Vive la revolution             |
+ |            the.pds.command@gmail.com                       |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |             2/17/23 - Creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+parse arg cmd
+if cmd = '' then
+  exit
+
+Address ISPExec
+"control errors return"
+"vget (pdstname)"
+
+if left(pdstname,3) /= 'PDC' then do
+  zmsg000l =  "LISTC/F table has not been created"
+  "setmsg msg(ispz000)"
+  exit
+  end
+
+"tbbottom" pdstname
+
+rc=isfcalls('ON')
+/* Access the APF/LPA/LNK/PARM panel */
+Address SDSF "ISFEXEC '"cmd"' (" verbose ")"
+lrc=rc
+if lrc<>0 then                 /* If command failed */
+  do
+    say "** ISFEXEC failed with rc="lrc"."
+    exit 20
+  end
+call colsrtn isfrows           /* Process all rows */
+rc=isfcalls('OFF')
+exit 0
+
+colsrtn:
+arg numrows
+do rowix=1 to numrows          /* Loop for all rows */
+  parse value '' with pdsccat, pdscvtoc, pdsctot, pdscupd, pdscused,
+                      pdscfree, pdscsec, pdscrf, pdscext, pdsclrec,
+                      pdscblks, pdscdsor, pdsccdat, pdscrdat, pdscused
+  pdscdsn  = strip(dsname.rowix)
+  pdscvol  = strip(volser.rowix)
+  pdscdata = '*'||cmd||'*'
+  pdscrf   = strip(recfm.rowix)
+  pdscext  = right(extent.rowix,3)
+  pdsclrec = right(lrecl.rowix,5)
+  pdscblks = right(blksize.rowix,5)
+  pdscdsor = strip(dsorg.rowix)
+  if dsorg.rowix = 'PO-E' then
+      pdscdsor = 'PE'
+  pdsccdat=  strip(crdate.rowix)
+  pdscrdat=  strip(refdate.rowix)
+
+  "tbmod" pdstname
+  if rc > 8 then do
+    zmsg000l = "TBOPEN has not been issued for table" pdstname
+    "setmsg msg(ispz000)"
+    exit
+    end
+  end
+return

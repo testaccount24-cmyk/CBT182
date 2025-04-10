@@ -1,0 +1,349 @@
+)ATTR DEFAULT(%+_)
+    % TYPE(TEXT) INTENS(HIGH) COLOR(WHITE) SKIP(ON)
+    ¢ TYPE(TEXT) INTENS(HIGH) COLOR(YELLOW)
+    + TYPE(TEXT) INTENS(LOW)  COLOR(TURQ) SKIP(ON)
+    _ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED)
+    ¬ TYPE(INPUT) INTENS(HIGH) CAPS(ON) JUST(LEFT) COLOR(RED) PAD(_)
+    ¦ TYPE(INPUT) INTENS(HIGH) CAPS(OFF)
+    } type(output) intens(high) caps(off) just(left) pas(on)
+      color(blue)
+)BODY EXPAND(\\)
+%TUTORIAL  +-\-\-¢PDS Full-screen Help+-\-\-
+%OPTION  ===>_ZCMD                                                             +
++
+  %Click+on the subcommand that you want full-screen help on.  Otherwise,
+   just press%ENTER+to display the PDS help member.
+
+¢PDS subcommands:+
+}cmd1    +}cmd2    +}cmd3    +}cmd4    +}cmd5    +}cmd6    +}cmd7    +}cmd8    +
+}cmd9    +}cmd10   +}cmd11   +}cmd12   +}cmd13   +}cmd14   +}cmd15   +}cmd16   +
+}cmd17   +}cmd18   +}cmd19   +}cmd20   +}cmd21   +}cmd22   +}cmd23   +}cmd24   +
+}cmd25   +}cmd26   +}cmd27   +}cmd28   +}cmd29   +}cmd30   +}cmd31   +}cmd32   +
+}cmd33   +}cmd34   +}cmd35   +}cmd36   +}cmd37   +}cmd38   +}cmd39   +}cmd40   +
+}cmd41   +}cmd42   +}cmd43   +}cmd44   +}cmd45   +}cmd46   +}cmd47   +}cmd48   +
+}cmd49   +}cmd50   +}cmd51   +}cmd52   +}cmd53   +}cmd54   +}cmd55   +}cmd56   +
+}cmd57   +}cmd58   +}cmd59   +}cmd60   +}cmd61   +}cmd62   +}cmd63   +}cmd64   +
+}cmd65   +}cmd66   +}cmd67   +}cmd68   +}cmd69   +}cmd70   +}cmd71   +}cmd72   +
+}cmd73   +}cmd74   +}cmd75   +}cmd76   +
+
+¢Other documentation:+
+}cmd77   +}cmd78   +}cmd79   +}cmd80   +}cmd81   +}cmd82   +}cmd83   +}cmd84   +
+}cmd85   +}cmd86   +}cmd87   +}cmd88   +}cmd89   +}cmd90   +}cmd91   +}cmd92   +
+}cmd93   +}cmd94   +}cmd95   +}cmd96   +}cmd97   +}cmd98   +}cmd99   +}cmd100  +
+}cmd101  +}cmd102  +
+)INIT
+  .help = p86qref
+  &USRLEFT  = ''
+  &USRRIGHT = ''
+  &cmd1  = 'ALIAS'
+  &cmd2  = 'AMBLIST'
+  &cmd3  = 'ATTRIB'
+  &cmd4  = 'BLK3390'
+  &cmd5  = 'BROWSE'
+  &cmd6  = 'CHANGE'
+  &cmd7  = 'COBANAL'
+  &cmd8  = 'COMPARE'
+  &cmd9  = 'COMPRESS'
+  &cmd10 = 'CONDEND'
+  &cmd11 = 'CONTROL'
+  &cmd12 = 'COPY'
+  &cmd13 = 'DCF'
+  &cmd14 = 'DELETE'
+  &cmd15 = 'DIRENTRY'
+  &cmd16 = 'DISASM'
+  &cmd17 = 'DISPLAY'
+  &cmd18 = 'DLINK'
+  &cmd19 = 'DSAT'
+  &cmd20 = 'DSNAME'
+  &cmd21 = 'DSPRINT'
+  &cmd22 = 'DVOL'
+  &cmd23 = 'EDIT'
+  &cmd24 = 'EDREC'
+  &cmd25 = 'EXEC'
+  &cmd26 = 'FIND'
+  &cmd27 = 'FIXPDS'
+  &cmd28 = 'FSE'
+  &cmd29 = 'HELP'
+  &cmd30 = 'HISTORY'
+  &cmd31 = 'IF'
+  &cmd32 = 'ISPF'
+  &cmd33 = 'ISPMODE'
+  &cmd34 = 'ISPXEQ'
+  &cmd35 = 'KLEAR'
+  &cmd36 = 'LCS'
+  &cmd37 = 'LIST'
+  &cmd38 = 'LMA'
+  &cmd39 = 'LOAD'
+  &cmd40 = 'MAP'
+  &cmd41 = 'MATCH'
+  &cmd42 = 'MEMBERS'
+  &cmd43 = 'MEMLIST'
+  &cmd44 = 'MXIBAT'
+  &cmd45 = 'OFFLOAD'
+  &cmd46 = 'OPTIONS'
+  &cmd47 = 'OUTCOPY'
+  &cmd48 = 'PATTERN'
+  &cmd49 = 'PRINTOFF'
+  &cmd50 = 'PTSEXP'
+  &cmd51 = 'QUIT'
+  &cmd52 = 'RECALL'
+  &cmd53 = 'RENAME'
+  &cmd54 = 'REPLACE'
+  &cmd55 = 'REPRO'
+  &cmd56 = 'RESTORE'
+  &cmd57 = 'REVIEW'
+  &cmd58 = 'SMPGEN'
+  &cmd59 = 'SRCHFOR'
+  &cmd60 = 'SUBLIST'
+  &cmd61 = 'SUBMIT'
+  &cmd62 = 'SVC'
+  &cmd63 = 'TIME'
+  &cmd64 = 'TRKMAP'
+  &cmd65 = 'TSO'
+  &cmd66 = 'TSOEDIT'
+  &cmd67 = 'TSOLIST'
+  &cmd68 = 'USAGE'
+  &cmd69 = 'VERIFY'
+  &cmd70 = 'VIEW'
+  &cmd71 = 'VPDSE'
+  &cmd72 = 'VPSPRINT'
+  &cmd73 = 'VTOC'
+  &cmd74 = 'XISPMODE'
+  &cmd75 = 'XMIT'
+  &cmd76 = 'ZAP'
+  &cmd77 = 'ABEND'
+  &cmd78 = 'ATTN'
+  &cmd79 = 'AUTHORS'
+  &cmd80 = 'CODERS'
+  &cmd81 = 'COMPILER'
+  &cmd82 = 'CSECTS'
+  &cmd83 = 'DIALOG'
+  &cmd84 = 'EDITLOG'
+  &cmd85 = 'EXTERNAL'
+  &cmd86 = 'FAMS'
+  &cmd87 = 'GLOSSARY'
+  &cmd88 = 'GROUPS'
+  &cmd89 = 'INFO'
+  &cmd90 = 'LIMITS'
+  &cmd91 = 'MESSAGES'
+  &cmd92 = 'MODEL'
+  &cmd93 = 'PDSCMDS'
+  &cmd94 = 'PDSMAN'
+  &cmd95 = 'PDSEGEN'
+  &cmd96 = 'PGLITE'
+  &cmd97 = 'RPFBR'
+  &cmd98 = 'RPFED'
+  &cmd99 = 'SHA'
+  &cmd100= 'SHOW'
+  &cmd101= 'UPDATE'
+  &cmd102= 'VERS'
+)PROC
+ &PDSZSEL=TRANS(TRUNC(&ZCMD,'.')
+         ALIAS,'HEL ALIAS'
+       AMBLIST,'HEL AMBLIST'
+        ATTRIB,'HEL ATTRIB'
+       BLK3390,'HEL BLK3390'
+        BROWSE,'HEL BROWSE'
+        CHANGE,'HEL CHANGE'
+       COBANAL,'HEL COBANAL'
+       COMPARE,'HEL COMPARE'
+      COMPRESS,'HEL COMPRESS'
+       CONDEND,'HEL CONDEND'
+       CONTROL,'HEL CONTROL'
+          COPY,'HEL COPY'
+           DCF,'HEL DCF'
+        DELETE,'HEL DELETE'
+      DIRENTRY,'HEL DIRENTRY'
+        DISASM,'HEL DISASM'
+       DISPLAY,'HEL DISPLAY'
+         DLINK,'HEL DLINK'
+          DSAT,'HEL DSAT'
+        DSNAME,'HEL DSNAME'
+       DSPRINT,'HEL DSPRINT'
+          DVOL,'HEL DVOL'
+          EDIT,'HEL EDIT'
+         EDREC,'HEL EDREC'
+          EXEC,'HEL EXEC'
+          FIND,'HEL FIND'
+        FIXPDS,'HEL FIXPDS'
+           FSE,'HEL FSE'
+          HELP,'HEL HELP'
+       HISTORY,'HEL HISTORY'
+            IF,'HEL IF'
+          ISPF,'HEL ISPF'
+       ISPMODE,'HEL ISPMODE'
+        ISPXEQ,'HEL ISPXEQ'
+         KLEAR,'HEL KLEAR'
+           LCS,'HEL LCS'
+          LIST,'HEL LIST'
+           LMA,'HEL LMA'
+          LOAD,'HEL LOAD'
+           MAP,'HEL MAP'
+         MATCH,'HEL MATCH'
+       MEMBERS,'HEL MEMBERS'
+       MEMLIST,'HEL MEMLIST'
+        MXIBAT,'HEL MXIBAT'
+       OFFLOAD,'HEL OFFLOAD'
+       OPTIONS,'HEL OPTIONS'
+       OUTCOPY,'HEL OUTCOPY'
+       PATTERN,'HEL PATTERN'
+      PRINTOFF,'HEL PRINTOFF'
+        PTSEXP,'HEL PTSEXP'
+          QUIT,'HEL QUIT'
+        RECALL,'HEL RECALL'
+        RENAME,'HEL RENAME'
+       REPLACE,'HEL REPLACE'
+         REPRO,'HEL REPRO'
+       RESTORE,'HEL RESTORE'
+        REVIEW,'HEL REVIEW'
+        SMPGEN,'HEL SMPGEN'
+       SRCHFOR,'HEL SRCHFOR'
+       SUBLIST,'HEL SUBLIST'
+        SUBMIT,'HEL SUBMIT'
+           SVC,'HEL SVC'
+          TIME,'HEL TIME'
+        TRKMAP,'HEL TRKMAP'
+           TSO,'HEL TSO'
+       TSOEDIT,'HEL TSOEDIT'
+       TSOLIST,'HEL TSOLIST'
+         USAGE,'HEL USAGE'
+        VERIFY,'HEL VERIFY'
+          VIEW,'HEL VIEW'
+         VPDSE,'HEL VPDSE'
+      VPSPRINT,'HEL VPSPRINT'
+          VTOC,'HEL VTOC'
+      XISPMODE,'HEL XISPMODE'
+          XMIT,'HEL XMIT'
+           ZAP,'HEL ZAP'
+         ABEND,'HEL ABEND'
+          ATTN,'HEL ATTN'
+       AUTHORS,'HEL AUTHORS'
+        CODERS,'HEL CODERS'
+      COMPILER,'HEL COMPILER'
+        CSECTS,'HEL CSECTS'
+        DIALOG,'HEL DIALOG'
+       EDITLOG,'HEL EDITLOG'
+      EXTERNAL,'HEL EXTERNAL'
+          FAMS,'HEL FAMS'
+      GLOSSARY,'HEL GLOSSARY'
+        GROUPS,'HEL GROUPS'
+          INFO,'HEL INFO'
+        LIMITS,'HEL LIMITS'
+      MESSAGES,'HEL MESSAGES'
+         MODEL,'HEL MODEL'
+       PDSCMDS,'HEL PDSCMDS'
+        PDSMAN,'HEL PDSMAN'
+       PDSEGEN,'HEL PDSEGEN'
+        PGLITE,'HEL PGLITE'
+         RPFBR,'HEL RPFBR'
+         RPFED,'HEL RPFED'
+           SHA,'HEL SHA'
+          SHOW,'HEL SHOW'
+        UPDATE,'HEL UPDATE'
+          VERS,'HEL VERS'
+           ' ','HEL '
+             *,'HEL &zcmd')
+)PNTS
+FIELD(cmd1)  VAR(ZCMD) VAL('ALIAS')
+FIELD(cmd2)  VAR(ZCMD) VAL('AMBLIST')
+FIELD(cmd3)  VAR(ZCMD) VAL('ATTRIB')
+FIELD(cmd4)  VAR(ZCMD) VAL('BLK3390')
+FIELD(cmd5)  VAR(ZCMD) VAL('BROWSE')
+FIELD(cmd6)  VAR(ZCMD) VAL('CHANGE')
+FIELD(cmd7)  VAR(ZCMD) VAL('COBANAL')
+FIELD(cmd8)  VAR(ZCMD) VAL('COMPARE')
+FIELD(cmd9)  VAR(ZCMD) VAL('COMPRESS')
+FIELD(cmd10) VAR(ZCMD) VAL('CONDEND')
+FIELD(cmd11) VAR(ZCMD) VAL('CONTROL')
+FIELD(cmd12) VAR(ZCMD) VAL('COPY')
+FIELD(cmd13) VAR(ZCMD) VAL('DCF')
+FIELD(cmd14) VAR(ZCMD) VAL('DELETE')
+FIELD(cmd15) VAR(ZCMD) VAL('DIRENTRY')
+FIELD(cmd16) VAR(ZCMD) VAL('DISASM')
+FIELD(cmd17) VAR(ZCMD) VAL('DISPLAY')
+FIELD(cmd18) VAR(ZCMD) VAL('DLINK')
+FIELD(cmd19) VAR(ZCMD) VAL('DSAT')
+FIELD(cmd20) VAR(ZCMD) VAL('DSNAME')
+FIELD(cmd21) VAR(ZCMD) VAL('DSPRINT')
+FIELD(cmd22) VAR(ZCMD) VAL('DVOL')
+FIELD(cmd23) VAR(ZCMD) VAL('EDIT')
+FIELD(cmd24) VAR(ZCMD) VAL('EDREC')
+FIELD(cmd25) VAR(ZCMD) VAL('EXEC')
+FIELD(cmd26) VAR(ZCMD) VAL('FIND')
+FIELD(cmd27) VAR(ZCMD) VAL('FIXPDS')
+FIELD(cmd28) VAR(ZCMD) VAL('FSE')
+FIELD(cmd29) VAR(ZCMD) VAL('HELP')
+FIELD(cmd30) VAR(ZCMD) VAL('HISTORY')
+FIELD(cmd31) VAR(ZCMD) VAL('IF')
+FIELD(cmd32) VAR(ZCMD) VAL('ISPF')
+FIELD(cmd33) VAR(ZCMD) VAL('ISPMODE')
+FIELD(cmd34) VAR(ZCMD) VAL('ISPXEQ')
+FIELD(cmd35) VAR(ZCMD) VAL('KLEAR')
+FIELD(cmd36) VAR(ZCMD) VAL('LCS')
+FIELD(cmd37) VAR(ZCMD) VAL('LIST')
+FIELD(cmd38) VAR(ZCMD) VAL('LMA')
+FIELD(cmd39) VAR(ZCMD) VAL('LOAD')
+FIELD(cmd40) VAR(ZCMD) VAL('MAP')
+FIELD(cmd41) VAR(ZCMD) VAL('MATCH')
+FIELD(cmd42) VAR(ZCMD) VAL('MEMBERS')
+FIELD(cmd43) VAR(ZCMD) VAL('MEMLIST')
+FIELD(cmd44) VAR(ZCMD) VAL('MXIBAT')
+FIELD(cmd45) VAR(ZCMD) VAL('OFFLOAD')
+FIELD(cmd46) VAR(ZCMD) VAL('OPTIONS')
+FIELD(cmd47) VAR(ZCMD) VAL('OUTCOPY')
+FIELD(cmd48) VAR(ZCMD) VAL('PATTERN')
+FIELD(cmd49) VAR(ZCMD) VAL('PRINTOFF')
+FIELD(cmd50) VAR(ZCMD) VAL('PTSEXP')
+FIELD(cmd51) VAR(ZCMD) VAL('QUIT')
+FIELD(cmd52) VAR(ZCMD) VAL('RECALL')
+FIELD(cmd53) VAR(ZCMD) VAL('RENAME')
+FIELD(cmd54) VAR(ZCMD) VAL('REPLACE')
+FIELD(cmd55) VAR(ZCMD) VAL('REPRO')
+FIELD(cmd56) VAR(ZCMD) VAL('RESTORE')
+FIELD(cmd57) VAR(ZCMD) VAL('REVIEW')
+FIELD(cmd58) VAR(ZCMD) VAL('SMPGEN')
+FIELD(cmd59) VAR(ZCMD) VAL('SRCHFOR')
+FIELD(cmd60) VAR(ZCMD) VAL('SUBLIST')
+FIELD(cmd61) VAR(ZCMD) VAL('SUBMIT')
+FIELD(cmd62) VAR(ZCMD) VAL('SVC')
+FIELD(cmd63) VAR(ZCMD) VAL('TIME')
+FIELD(cmd64) VAR(ZCMD) VAL('TRKMAP')
+FIELD(cmd65) VAR(ZCMD) VAL('TSO')
+FIELD(cmd66) VAR(ZCMD) VAL('TSOEDIT')
+FIELD(cmd67) VAR(ZCMD) VAL('TSOLIST')
+FIELD(cmd68) VAR(ZCMD) VAL('USAGE')
+FIELD(cmd69) VAR(ZCMD) VAL('VERIFY')
+FIELD(cmd70) VAR(ZCMD) VAL('VIEW')
+FIELD(cmd71) VAR(ZCMD) VAL('VPDSE')
+FIELD(cmd72) VAR(ZCMD) VAL('VPSPRINT')
+FIELD(cmd73) VAR(ZCMD) VAL('VTOC')
+FIELD(cmd74) VAR(ZCMD) VAL('XISPMODE')
+FIELD(cmd75) VAR(ZCMD) VAL('XMIT')
+FIELD(cmd76) VAR(ZCMD) VAL('ZAP')
+FIELD(cmd77) VAR(ZCMD) VAL('ABEND')
+FIELD(cmd78) VAR(ZCMD) VAL('ATTN')
+FIELD(cmd79) VAR(ZCMD) VAL('AUTHORS')
+FIELD(cmd80) VAR(ZCMD) VAL('CODERS')
+FIELD(cmd81) VAR(ZCMD) VAL('COMPILER')
+FIELD(cmd82) VAR(ZCMD) VAL('CSECTS')
+FIELD(cmd83) VAR(ZCMD) VAL('DIALOG')
+FIELD(cmd84) VAR(ZCMD) VAL('EDITLOG')
+FIELD(cmd85) VAR(ZCMD) VAL('EXTERNAL')
+FIELD(cmd86) VAR(ZCMD) VAL('FAMS')
+FIELD(cmd87) VAR(ZCMD) VAL('GLOSSARY')
+FIELD(cmd88) VAR(ZCMD) VAL('GROUPS')
+FIELD(cmd89) VAR(ZCMD) VAL('INFO')
+FIELD(cmd90) VAR(ZCMD) VAL('LIMITS')
+FIELD(cmd91) VAR(ZCMD) VAL('MESSAGES')
+FIELD(cmd92) VAR(ZCMD) VAL('MODEL')
+FIELD(cmd93) VAR(ZCMD) VAL('PDSCMDS')
+FIELD(cmd94) VAR(ZCMD) VAL('PDSMAN')
+FIELD(cmd95) VAR(ZCMD) VAL('PDSEGEN')
+FIELD(cmd96) VAR(ZCMD) VAL('PGLITE')
+FIELD(cmd97) VAR(ZCMD) VAL('RPFBR')
+FIELD(cmd98) VAR(ZCMD) VAL('RPFED')
+FIELD(cmd99) VAR(ZCMD) VAL('SHA')
+FIELD(cmd100) VAR(ZCMD) VAL('SHOW')
+FIELD(cmd101) VAR(ZCMD) VAL('UPDATE')
+FIELD(cmd102) VAR(ZCMD) VAL('VERS')
+)END

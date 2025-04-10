@@ -1,0 +1,146 @@
+o  ASMIDF members for setup and debugging of PDS command:
+
+  IDFCLIST - Clists to run ASMIDF
+  IDFCMDS  - ASMIDF commands (short summary)
+  IDFJCL   - JCL to assemble/link PDSMAIN and run ASMLANGX
+  IDFMAC   - ASMIDF Rexx macros (PROFILE and others)
+  IDFSETUP - Allocate libraries &SYSUID.DEV.name for ASMIDF
+  LANGXLAB - Extract CSECTs and DS 0H labels from ASMLANGX
+             file and build ASMIDF 'BREAK' statements
+
+Notes:
+
+o ASMIDF can not debug ISPF applications, so the dialog portion of
+  of PDS has to be debugged with TSO TEST (see $$$$TEST).
+
+o In order to run ASMIDF successfully for PDS, I had to linkedit
+  with a load module name of PDSMAIN which matches the first CSECT
+  name.
+
+o ASMIDF recognizes symbols such as external references (CSECTs
+  and V-cons) as well as ENTRY names.  You can issue a BREAK statement
+  on those names.
+
+o ASMIDF does not allow breakpoints on "DS 0H" labels so I wrote
+  some Rexx to read the ASMLANGX PDSMAIN member and generate
+  breakpoints by (CSECT)Stmt#nnnnn.  Once this is captured, you can
+  cut and paste the breakpoints you need into a member in the ASM file
+  allocation, and execute later as an ASMIDF macro.
+
+  There is only enough storage for around 140 breakpoints at any one
+  time, so keep that in mind when creating your ASM breakpoint macro.
+
+o Typical launch sequence of ASMIDF from TSO READY.
+
+  READY
+  exec dev(pdsmain)
+  . . .
+
+  <PF1> (StmtStep)
+  ASMMAI228I Extract file automatically loaded for CSECT PDSMAIN
+
+  <PF9> (DISASM)
+  +01-Program Source and Disassembly----------------------------------+
+  | (PDSMAIN) Stmt#467           PDSMAIN  CSECT                       |
+  |  0467 *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** |
+  |  0467 ***                                                         |
+  |  0467 ***    HISTORICAL SECTION:                                  |
+  |  0467 ***                                                         |
+  |  0467 ***                                                         |
+  |  0467 ***     VERSION   LAST MOD   SIZE   IN K   # SUBS   SOURCE  |
+  |  0467 ***     =======   ========   ====   ====   ======   ======  |
+  |  0467 ***                                           m             |
+  |  0467 ***      PDS00    3/20/72    3E00    16K     15      3500   |
+  |  0467 ***                                                         |
+  |  0467 ***      PDS10    6/12/75    4000    16K     15      4000   |
+  |  0467 ***                                                         |
+  +-------------------------------------------------------------------+
+
+  --> break control
+  ASMMAI087I BREAK set at 0014B760 ==> (CONTROL) Stmt#4944
+
+  <PF5> (Run)
+
+  IKJ56700A ENTER NAME OF DATA SET -
+  dev.clist
+
+  PDS100I ASMIDF -- VERSION 8.6.19.1  JANUARY 14, 2023  MVSLEV=MVS725
+  PDS200I DISP UNIT     RECFM LRECL BLKSIZE   ALLOCTRK FREETRK SECONDARY
+  PDS200I SHR  3390     FB       80   27920   1X   N/A     N/A     5 CYL
+  PDS300A ENTER OPTION -- DSN=TRIDJK.DEV.CLIST,VOL=SER=CBTU06  MEM=
+  control cpu
+
+  +01-Program Source and Disassembly-----------------------------------+
+  | (CONTROL) Stmt#4944          CONTROL  CSECT                        |
+  |  4944          USING *,R8                                          |
+  |  4946          TM    FLAGSEE,FBKGRND               BACKGROUND MODE?|
+  |  0014B760 9108 729D                   TM      669(R7),8            |
+  |  4947          BO    CONT004                       YES, BRANCH     |
+  |  0014B764 4710 802C                   BC      1,CONTROL+44         |
+  |  4948          TM    FLAGSFF,FSPFOPT6+FSPFERR+FSPFCALL+FSPFDIAL  CH|
+  |  0014B768 91F0 729E                   TM      670(R7),240          |
+  |  4949          BNZ   CONT004                                     NO|
+  |  0014B76C 4770 802C                   BC      7,CONTROL+44         |
+  |  4950          TM    #OUT+10,X'01'                 SYSOUT/DSNAME?  |
+  |  0014B770 9101 7ACA                   TM      2762(R7),1           |
+  |  4951          BNO   CONT004                       NO, BRANCH      |
+  |  0014B774 47E0 802C                   BC      14,CONTROL+44        |
+  |  4952          TM    FLAGSEE,FNOTTERM              FROM A CLIST SOU|
+  |  0014B778 9104 729D                   TM      669(R7),4            |
+  |  4953          BO    CONT004                       YES, BRANCH     |
+  +--------------------------------------------------------------------+
+  ASMMAI018I BREAK point has been reached but NOT executed
+
+  At breakpoint, enter any IDF commands
+  (e.g., SHOW, MAP, NAMES, VAR, WHERE, BREAK, WATCH, PATH, MACRO name)
+
+  --> var dsname;volume;flagsaa;flagsbb
+  +02-Variable Information---------------------------------------------+
+  | Var: DSNAME              > TRIDJK.DEV.CNTL                         |
+  | Var: VOLUME              >          <               Loc: 001252E4-0|
+  | Var: FLAGSAA             > 00 <                     Loc: 00125299  |
+  | Var: FLAGSBB             > 80 <                     Loc: 0012529A  |
+  +--------------------------------------------------------------------+
+
+  <PF1> (StmtStep)
+  . . .
+  --> IDF commands, storage alterations, yadda, yadda
+  . . .
+  <PF1> (StmtStep)
+  <PF5> (Run)
+
+  PDS100I ASMIDF -- VERSION 8.6.19.1  JANUARY 14, 2023  MVSLEV=MVS725
+  PDS106I DATE FORMAT: USA (MM/DD/YY)
+  PDS107I LAST ASSEMBLED: PDSMAIN         8.6.19.1        2023-02-02
+
+  PDS030I GLOBAL OPERANDS: ALIASINFO, LKEDDATE, PROMPT, RECOVER, TRANSLA
+  PDS030I GLOBAL OPERANDS: NODSNAME, NOSYSOUT, NOFORM, NODEST
+  PDS031I INPUT BUFFERING: MULTIPLE
+  PDS036I LARGEST FREE STORAGE AREA IS 10684K
+  PDS046I LARGEST AREA ABOVE THE LINE IS 1865M
+
+  PDS280I OS NAME: z/OS   02.05.00   SMF ID: CBT
+  PDS281I SCP PRODUCT LEVEL: SP7.2.5 HBB77D0
+  PDS282I CPC NODE: 008562.T02.IBM.02.00000005ED28
+  PDS283I SU/SECOND:   85106.38   TOTAL MIPS:    3509.54
+  PDS284I CPU MODEL:  8562   ONLINE CPUS:   2
+  PDS285I REAL STORAGE:    8192MB   EXPANDED STORAGE:     0MB
+  PDS286I PROCESSOR NAME: VI8562   LPAR NAME: TRNG
+  PDS287I ARCHITECTURE LEVEL: 2   Z/ARCH
+  PDS288I CPU SERIAL: 02ED28   VERSION CODE: 00
+  PDS289I SECURITY SYSTEM: RACF   JOB ENTRY SYSTEM: JES2
+  PDS290I IPL TIME: 11.54.21 AM      FRIDAY      DEC 23, 2022
+  PDS291I SYSPLEX NAME: LOCAL   SYSPLEX ID: BT
+  PDS292I SYSTEM NAME: CBT
+
+  end
+
+  ASMMAI019I Target program has completed and returned control
+  <PF3> (Quit)
+
+  ASMMAI142A Press QUIT again to return to MVS
+  <PF3> (Quit)
+
+  READY
+  exec dev(pdsmainx)
+  . . .

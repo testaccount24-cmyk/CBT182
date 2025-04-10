@@ -1,0 +1,29 @@
+<lmod sort>
+SORT     is 018A80 bytes at 00D2C000 in LPA Directory    (Alias of ICEMAN  )
+         Relocated entry point at 00D2C148 is AMODE ANY
+SORT     found as a minor name at TTR 001403 in LINKLIST library (16)
+         DSN = SYS1.SICELINK on CBTRSA
+         Module length is 010200, RMODE 24 ; entry point at 000148 is AMODE ANY
+SORT     is an alias of ICEMANNR, entry point at 000148
+
+<lmod isplink>
+ISPLINK  found as a major name at TTR 002704 in LINKLIST library (30)
+         DSN = ISP.SISPLOAD on CBTRSA
+         Module length is 0001D8, RMODE 24 ; entry point at 000000 is AMODE ANY
+
+<lmod iefbr14>
+IEFBR14  is 000008 bytes at 00E2F000 in LPA Directory
+         Relocated entry point at 00E2F000 is AMODE 24
+IEFBR14  found as a major name at TTR 01AE0D in SYS1.LINKLIB
+         Module length is 000008, RMODE 24 ; entry point at 000000 is AMODE 24
+
+<lmod mxi>
+MXI      found as a major name at TTR 066401 in JOB/STEP library (01)
+         DSN = SYS1.CBT.LINKLIB on CBTU04
+         Module length is 0AF660, RMODE 24 ; entry point at 000000 is AMODE 31
+
+<lmod filemgr ddname(ispllib)>
+FILEMGR  found as a minor name at TTR 00008E in private library  (03)
+         DSN = FMN.SFMNMOD1 on CBTCAT
+         Module length is 652470, RMODE ANY; entry point at 0001A8 is AMODE 31
+FILEMGR  is an alias of FMNMAIN , entry point at 0001A8

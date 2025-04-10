@@ -1,0 +1,13 @@
+*----------------------------------------------------------------------*
+*                          VI - Changes                                *
+*----------------------------------------------------------------------*
+
+  07 Oct 2024
+     - Added checks for ALIAS entries and a rc=4 not
+       cataloged condition (e.g., VVDS datasets).
+     - Added VSAM data set type abbreviation (e.g., LINEAR (LDS)).
+
+  28 Apr 2020
+     - Jim Turner (jim_turner@triserv.com) added additional
+       informational fields for SMS/RLS and made the VI#1 panel
+       scrollable.
